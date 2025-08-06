@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guided EMDR Session Tool</title>
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --text-color: #333;
+            --container-bg: #ffffff;
+            --primary-color: #28a745; /* Green */
+            --primary-hover: #218838; /* Darker Green */
+            --border-color: #ccc;
+            --dot-color: #28a745; /* Green */
+        }
+
+        body.dark-mode {
+            --bg-color: #1a1a1a;
+            --text-color: #f0f2f5;
+            --container-bg: #2c2c2c;
+            --primary-color: #28a745; /* Green */
+            --primary-hover: #218838; /* Darker Green */
+            --border-color: #555;
+            --dot-color: #28a745; /* Green */
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        #main-content, #mode-selection {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background-color: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            width: 90%;
+            max-width: 800px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        body.dark-mode .container {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .controls .control-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 15px 25px;
+        }
+        .controls .control-row:not(:last-child) {
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 12px 25px;
+            font-size: 18px;
+            font-weight: 500;
+            cursor: pointer;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+        }
+        button:hover { background-color: var(--primary-hover); }
+
+        #theme-toggle-btn, #theme-toggle-btn-main {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+
+        .slider-control {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 300px;
+        }
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 14px;
+            color: #888;
+            margin-top: 5px;
+        }
+        body.dark-mode .slider-labels { color: #aaa; }
+        input[type="range"] { width: 100%; }
+        input[type="color"] {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: none;
+            border-radius: 50%;
+            cursor: pointer;
+            padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+            border-radius: 50%;
+        }
+        input[type="color"]::-webkit-color-swatch {
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+        }
+
+        /* --- Guided Experience Styles --- */
+        .step-container { display: none; }
+        .step-container.active { display: block; }
+        .step-header { text-align: center; margin-bottom: 20px; }
+        .step-number {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            line-height: 40px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .step-title { font-size: 24px; margin: 10px 0; color: var(--primary-color); }
+        .journal-section { margin: 20px 0; }
+        .journal-section textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 16px;
+            background-color: var(--container-bg);
+            color: var(--text-color);
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        .journal-section textarea:focus { outline: none; border-color: var(--primary-color); }
+        .journal-section label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-color); }
+        .button-group { display: flex; gap: 15px; justify-content: center; margin-top: 20px; }
+        .btn-secondary { background-color: transparent; border: 2px solid var(--primary-color); color: var(--primary-color); }
+        .btn-secondary:hover { background-color: var(--primary-color); color: white; }
+        .session-history { max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; background-color: var(--container-bg); }
+        .history-entry { padding: 15px; border-bottom: 1px solid var(--border-color); margin-bottom: 15px; }
+        .history-entry:last-child { border-bottom: none; margin-bottom: 0; }
+        .history-date { font-size: 14px; color: #666; margin-bottom: 8px; }
+        body.dark-mode .history-date { color: #aaa; }
+        .progress-indicator { display: flex; justify-content: center; margin: 20px 0; }
+        .progress-dot { width: 12px; height: 12px; border-radius: 50%; background-color: var(--border-color); margin: 0 5px; }
+        .progress-dot.active { background-color: var(--primary-color); }
+        .progress-dot.completed { background-color: var(--primary-hover); }
+        .instructions h2, .disclaimer h2 { margin-top: 0; text-align: center; color: var(--primary-color); }
+        .instructions ul { padding-left: 20px; }
+        .instructions li { margin-bottom: 12px; }
+        .instructions strong { color: var(--text-color); }
+
+        /* --- Fullscreen Session View --- */
+        #session-view {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        #session-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #session-dot { width: 60px; height: 60px; background-color: var(--dot-color); border-radius: 50%; position: absolute; top: 50%; transform: translateY(-50%); box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); }
+        #session-stop-btn { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); }
+        .session-progress { position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); color: var(--text-color); font-size: 18px; }
+
+        /* --- Toast & Modal --- */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--primary-hover);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s, visibility 0.5s, bottom 0.5s;
+        }
+        .toast.show { opacity: 1; visibility: visible; bottom: 30px; }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
+        .modal-content {
+            background-color: var(--container-bg);
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+        .modal-overlay.show .modal-content { transform: scale(1); }
+
+        /* --- Animations --- */
+        .fade-in { animation: fadeIn 1.5s ease-in-out forwards; }
+        .fade-out { animation: fadeOut 1.5s ease-in-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-10px); }
+        }
+
+        @media (max-width: 768px) {
+            body { -webkit-text-size-adjust: 100%; }
+            #main-content, #mode-selection { padding: 10px; }
+            .container { padding: 20px; width: 100%; }
+            .controls .control-row { flex-direction: column; gap: 20px; }
+            button { padding: 12px 20px; font-size: 16px; }
+            #theme-toggle-btn, #theme-toggle-btn-main { top: 10px; right: 10px; padding: 6px 12px; }
+            .slider-control { max-width: none; }
+            .step-title { font-size: 22px; }
+            .journal-section textarea { padding: 12px; font-size: 14px; }
+            .button-group { flex-direction: column; gap: 10px; }
+            .button-group button { width: 100%; }
+            #session-dot { width: 40px; height: 40px; }
+            #session-stop-btn { bottom: 20px; padding: 10px 20px; font-size: 16px; }
+            .session-progress { bottom: 70px; font-size: 16px; }
+            .progress-indicator { margin: 15px 0; }
+        }
+
+        @media (max-width: 480px) {
+            .step-title { font-size: 20px; }
+            .instructions li { margin-bottom: 8px; }
+            .container { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="mode-selection" style="display: flex;">
+        <div class="container" style="text-align: center; max-width: 500px;">
+            <h1 style="color: var(--primary-color);">Guided EMDR</h1>
+            <p style="margin-bottom: 30px;">Choose how you'd like to begin your session.</p>
+            <div class="button-group">
+                <button id="start-guided-btn" aria-label="Start a full guided session">Guided Session</button>
+                <button id="start-quick-btn" class="btn-secondary" aria-label="Start a quick session with only the eye movement exercise">Quick Start (EMDR Only)</button>
+            </div>
+            <button id="theme-toggle-btn-main" aria-label="Toggle color theme" style="position: absolute; top: 20px; right: 20px;">Toggle Theme</button>
+        </div>
+    </div>
+
+    <div id="main-content" style="display: none;">
+        <!-- Progress Indicator -->
+        <div class="progress-indicator">
+            <div class="progress-dot" data-step="1" aria-label="Step 1 of 5"></div>
+            <div class="progress-dot" data-step="2" aria-label="Step 2 of 5"></div>
+            <div class="progress-dot" data-step="3" aria-label="Step 3 of 5"></div>
+            <div class="progress-dot" data-step="4" aria-label="Step 4 of 5"></div>
+            <div class="progress-dot" data-step="5" aria-label="Step 5 of 5"></div>
+        </div>
+
+        <!-- Step 1: Preparation -->
+        <div class="container step-container" id="step-1">
+            <div class="step-header">
+                <div class="step-number">1</div>
+                <h2 class="step-title">Preparation</h2>
+                <button id="theme-toggle-btn" aria-label="Toggle color theme" style="position: absolute; top: 20px; right: 20px;">Toggle Theme</button>
+            </div>
+            
+            <div id="guided-text-container" style="min-height: 120px; display: flex; align-items: center; justify-content: center; text-align: center; margin-bottom: 20px;">
+                <h3 id="guided-text" style="font-size: 20px; font-weight: 500;"></h3>
+            </div>
+
+            <div id="preparation-inputs" style="display: none;">
+                <div class="journal-section">
+                    <label for="safe-place">First, describe your "Safe or Calm Place" - a real or imaginary place where you feel completely at peace:</label>
+                    <textarea id="safe-place" placeholder="Describe your safe place in detail... What do you see, hear, smell, and feel there?"></textarea>
+                </div>
+                <div class="journal-section">
+                    <label for="target-memory">Now, think of a memory or situation that causes you mild distress (start small). Describe it briefly:</label>
+                    <textarea id="target-memory" placeholder="What happened? Keep it brief and focus on the specific incident..."></textarea>
+                </div>
+                <div class="journal-section">
+                    <label for="negative-thought">What negative thought or belief comes up about yourself when you think of this memory?</label>
+                    <textarea id="negative-thought" placeholder="Examples: 'I am not safe', 'I am powerless', 'I am not good enough'..."></textarea>
+                </div>
+            </div>
+            
+            <div class="button-group" id="step-1-buttons" style="display: none;">
+                <button onclick="goToStep(2)">Continue to Setup</button>
+            </div>
+        </div>
+
+        <!-- Step 2: Setup & Assessment -->
+        <div class="container step-container" id="step-2">
+            <div class="step-header">
+                <div class="step-number">2</div>
+                <h2 class="step-title">Setup & Assessment</h2>
+            </div>
+            <div class="journal-section">
+                <label for="emotions">What emotions are you feeling right now as you think about this memory?</label>
+                <textarea id="emotions" placeholder="Examples: anger, sadness, fear, shame, guilt..."></textarea>
+            </div>
+            <div class="journal-section">
+                <label for="body-sensations">Where do you notice tension, discomfort, or sensations in your body?</label>
+                <textarea id="body-sensations" placeholder="Examples: tight chest, clenched jaw, knot in stomach, tense shoulders..."></textarea>
+            </div>
+            <div class="journal-section">
+                <label for="distress-level-label">Rate the intensity of your distress right now (0 = no distress, 10 = highest distress):</label>
+                <div style="text-align: center; margin: 15px 0;">
+                    <input type="range" id="distress-level" min="0" max="10" value="5" style="width: 300px;" aria-labelledby="distress-level-label">
+                    <div style="margin-top: 10px; font-size: 18px; font-weight: bold; color: var(--primary-color);">
+                        <span id="distress-value">5</span> / 10
+                    </div>
+                </div>
+            </div>
+            <div class="button-group">
+                <button class="btn-secondary" onclick="goToStep(1)">Back</button>
+                <button onclick="goToStep(3)">Continue to Processing</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Processing (EMDR Session) -->
+        <div class="container step-container" id="step-3">
+            <div class="step-header">
+                <div class="step-number">3</div>
+                <h2 class="step-title">Processing Session</h2>
+            </div>
+            <p style="text-align: center; margin-bottom: 25px; font-size: 18px; line-height: 1.6;">
+                <strong>Instructions:</strong> Hold the memory lightly in your awareness. Keep your head still and follow the dot with your eyes only. Let whatever comes up just come up.
+            </p>
+            <div class="controls">
+                <div class="control-row"><button id="start-set-btn">Start Set</button></div>
+                <div class="control-row">
+                    <div class="slider-control"><label for="speed-slider">Speed</label><input type="range" id="speed-slider" min="1" max="10" value="5" step="1" aria-label="Animation Speed"><div class="slider-labels"><span>Slower</span><span>Faster</span></div></div>
+                    <div class="slider-control"><label for="duration-slider">Duration</label><input type="range" id="duration-slider" min="20" max="60" value="30" step="5" aria-label="Session Duration"><div class="slider-labels"><span id="duration-label">30 seconds</span></div></div>
+                </div>
+                <div class="control-row">
+                    <div class="slider-control"><label for="dot-size-slider">Dot Size</label><input type="range" id="dot-size-slider" min="20" max="100" value="60" step="5" aria-label="Dot Size"><div class="slider-labels"><span>Smaller</span><span>Larger</span></div></div>
+                    <div class="slider-control"><label for="volume-slider">Volume</label><input type="range" id="volume-slider" min="0" max="1" value="0.5" step="0.1" aria-label="Audio Volume"><div class="slider-labels"><span>Mute</span><span>Max</span></div></div>
+                </div>
+                <div class="control-row">
+                     <div class="slider-control" style="flex-direction: row; align-items: center; gap: 10px; justify-content: center;"><label for="dot-color-picker">Dot Color</label><input type="color" id="dot-color-picker" value="#28a745" aria-label="Dot Color"></div>
+                     <div class="slider-control"><label for="sound-type-select">Sound Type</label><select id="sound-type-select" aria-label="Sound Type"><option value="sine">Sine Wave</option><option value="square">Square Wave</option><option value="sawtooth">Sawtooth</option><option value="triangle">Triangle</option></select></div>
+                </div>
+                <div class="control-row">
+                    <label><input type="checkbox" id="visual-toggle" checked> Visual</label>
+                    <label><input type="checkbox" id="audio-toggle" checked> Audio</label>
+                </div>
+            </div>
+            <div class="button-group" style="margin-top: 30px;">
+                <button class="btn-secondary" onclick="goToStep(2)">Back to Setup</button>
+                <button onclick="goToStep(4)">After Set - Check In</button>
+            </div>
+        </div>
+
+        <!-- Step 4: Check-in after set -->
+        <div class="container step-container" id="step-4">
+            <div class="step-header">
+                <div class="step-number">4</div>
+                <h2 class="step-title">Check-in</h2>
+            </div>
+            <p style="text-align: center; margin-bottom: 25px; font-size: 18px;">Take a deep breath. Let your mind go blank for a moment and just notice what comes up.</p>
+            <div class="journal-section">
+                <label for="what-came-up">What thoughts, feelings, sensations, or images came up during or after the set?</label>
+                <textarea id="what-came-up" placeholder="Describe anything that came to mind..."></textarea>
+            </div>
+            <div class="journal-section">
+                <label for="current-distress-label">How intense does the original memory/distress feel now? (0 = no distress, 10 = highest distress):</label>
+                <div style="text-align: center; margin: 15px 0;">
+                    <input type="range" id="current-distress" min="0" max="10" value="5" style="width: 300px;" aria-labelledby="current-distress-label">
+                    <div style="margin-top: 10px; font-size: 18px; font-weight: bold; color: var(--primary-color);">
+                        <span id="current-distress-value">5</span> / 10
+                    </div>
+                </div>
+            </div>
+            <div class="button-group">
+                <button class="btn-secondary" onclick="goToStep(3)">Do Another Set</button>
+                <button onclick="goToStep(5)">Finish Session</button>
+            </div>
+        </div>
+
+        <!-- Step 5: Closing & History -->
+        <div class="container step-container" id="step-5">
+            <div class="step-header">
+                <div class="step-number">5</div>
+                <h2 class="step-title">Session Complete</h2>
+            </div>
+            <div class="journal-section">
+                <label for="session-notes">Final notes about this session:</label>
+                <textarea id="session-notes" placeholder="How do you feel now? Any insights or observations?"></textarea>
+            </div>
+            <div class="journal-section">
+                <label for="safe-place-return">Take a moment to return to your safe/calm place. How does it feel now?</label>
+                <textarea id="safe-place-return" placeholder="Spend a few moments in your safe place..."></textarea>
+            </div>
+            <div class="button-group">
+                <button onclick="saveSession()">Save Session</button>
+                <button class="btn-secondary" onclick="startNewSession()">New Session</button>
+                <button class="btn-secondary" onclick="showHistory()">View History</button>
+            </div>
+        </div>
+
+        <!-- Session History -->
+        <div class="container step-container" id="history-view">
+            <div class="step-header"><h2 class="step-title">Session History</h2></div>
+            <div class="session-history" id="session-history"></div>
+            <div class="button-group">
+                <button onclick="hideHistory()">Back</button>
+                <button class="btn-secondary" onclick="clearHistory()">Clear All History</button>
+            </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="container" style="margin-top: 40px;">
+            <h2 style="text-align: center; color: var(--primary-color); margin-top: 0;">Disclaimer</h2>
+            <p style="text-align: center;">This tool provides bilateral stimulation for wellness purposes and is <strong>not</strong> a substitute for therapy with a licensed professional. For significant trauma, please seek guidance from a qualified EMDR therapist.</p>
+        </div>
+    </div>
+
+    <div id="session-view">
+        <canvas id="session-canvas"></canvas>
+        <div class="session-progress" id="session-progress">30s remaining</div>
+        <button id="session-stop-btn">Stop Set Early</button>
+    </div>
+
+    <div id="toast-notification" class="toast" role="alert" aria-live="assertive"></div>
+    <div id="custom-modal" class="modal-overlay" role="alertdialog" aria-modal="true" aria-labelledby="modal-text">
+        <div class="modal-content">
+            <p id="modal-text"></p>
+            <div class="button-group">
+                <button id="modal-confirm-btn">Confirm</button>
+                <button id="modal-cancel-btn" class="btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const dom = {
+            modeSelection: document.getElementById('mode-selection'),
+            mainContent: document.getElementById('main-content'),
+            sessionView: document.getElementById('session-view'),
+            canvas: document.getElementById('session-canvas'),
+            startGuidedBtn: document.getElementById('start-guided-btn'),
+            startQuickBtn: document.getElementById('start-quick-btn'),
+            startSetBtn: document.getElementById('start-set-btn'),
+            sessionStopBtn: document.getElementById('session-stop-btn'),
+            speedSlider: document.getElementById('speed-slider'),
+            durationSlider: document.getElementById('duration-slider'),
+            durationLabel: document.getElementById('duration-label'),
+            visualToggle: document.getElementById('visual-toggle'),
+            audioToggle: document.getElementById('audio-toggle'),
+            themeToggleBtn: document.getElementById('theme-toggle-btn'),
+            themeToggleBtnMain: document.getElementById('theme-toggle-btn-main'),
+            dotSizeSlider: document.getElementById('dot-size-slider'),
+            volumeSlider: document.getElementById('volume-slider'),
+            dotColorPicker: document.getElementById('dot-color-picker'),
+            soundTypeSelect: document.getElementById('sound-type-select'),
+            distressLevel: document.getElementById('distress-level'),
+            distressValue: document.getElementById('distress-value'),
+            currentDistress: document.getElementById('current-distress'),
+            currentDistressValue: document.getElementById('current-distress-value'),
+            guidedText: document.getElementById('guided-text'),
+            preparationInputs: document.getElementById('preparation-inputs'),
+            step1Buttons: document.getElementById('step-1-buttons'),
+            body: document.body
+        };
+
+        // --- State ---
+        const state = {
+            audioContext: null, isRunning: false, animationId: null, audioIntervalId: null,
+            setEndTimeoutId: null, currentStep: 1, sessionStartTime: null, progressInterval: null,
+            gainNode: null, canvasContext: null, guidedQuestionIndex: 0, guidedTimeoutId: null
+        };
+
+        const GUIDED_QUESTIONS = [
+            "First, let's bring to mind your Safe or Calm Place...",
+            "A place where you feel completely at peace.",
+            "Now, think of a memory or situation that causes you mild distress.",
+            "What negative thought comes up about yourself with this memory?"
+        ];
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', init);
+
+        function init() {
+            state.canvasContext = dom.canvas.getContext('2d');
+            setupEventListeners();
+            applyTheme(localStorage.getItem('emdr-theme') || 'light');
+            loadSettings();
+            loadSavedData();
+        }
+
+        function setupEventListeners() {
+            dom.themeToggleBtn.addEventListener('click', toggleTheme);
+            dom.themeToggleBtnMain.addEventListener('click', toggleTheme);
+            dom.startGuidedBtn.addEventListener('click', startGuidedSession);
+            dom.startQuickBtn.addEventListener('click', startQuickSession);
+            dom.distressLevel.addEventListener('input', e => dom.distressValue.textContent = e.target.value);
+            dom.currentDistress.addEventListener('input', e => dom.currentDistressValue.textContent = e.target.value);
+            dom.startSetBtn.addEventListener('click', startSet);
+            dom.sessionStopBtn.addEventListener('click', stopSet);
+            
+            // Settings listeners
+            const settingsControls = [dom.speedSlider, dom.visualToggle, dom.audioToggle];
+            settingsControls.forEach(el => el.addEventListener('input', saveSettings));
+            dom.durationSlider.addEventListener('input', () => { dom.durationLabel.textContent = `${dom.durationSlider.value} seconds`; saveSettings(); });
+            dom.dotSizeSlider.addEventListener('input', () => { updateDotStyle(); saveSettings(); });
+            dom.volumeSlider.addEventListener('input', () => { updateVolume(); saveSettings(); });
+            dom.soundTypeSelect.addEventListener('change', saveSettings);
+            dom.dotColorPicker.addEventListener('input', () => { updateDotStyle(); saveSettings(); });
+
+            document.addEventListener('visibilitychange', () => { if (document.hidden && state.isRunning) stopSet(); });
+        }
+
+        // --- Mode Selection ---
+        function startGuidedSession() {
+            dom.modeSelection.style.display = 'none';
+            dom.mainContent.style.display = 'flex';
+            goToStep(1);
+        }
+
+        function startQuickSession() {
+            dom.modeSelection.style.display = 'none';
+            dom.mainContent.style.display = 'flex';
+            goToStep(3);
+        }
+
+        // --- Settings Management ---
+        function saveSettings() {
+            const settings = {
+                speed: dom.speedSlider.value, duration: dom.durationSlider.value, dotSize: dom.dotSizeSlider.value,
+                volume: dom.volumeSlider.value, soundType: dom.soundTypeSelect.value, dotColor: dom.dotColorPicker.value,
+                visuals: dom.visualToggle.checked, audio: dom.audioToggle.checked,
+            };
+            localStorage.setItem('emdr-settings', JSON.stringify(settings));
+        }
+
+        function loadSettings() {
+            const savedSettings = localStorage.getItem('emdr-settings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                dom.speedSlider.value = settings.speed || 5;
+                dom.durationSlider.value = settings.duration || 30;
+                dom.dotSizeSlider.value = settings.dotSize || 60;
+                dom.volumeSlider.value = settings.volume || 0.5;
+                dom.soundTypeSelect.value = settings.soundType || 'sine';
+                dom.dotColorPicker.value = settings.dotColor || '#28a745';
+                dom.visualToggle.checked = settings.visuals !== false;
+                dom.audioToggle.checked = settings.audio !== false;
+            }
+            dom.durationLabel.textContent = `${dom.durationSlider.value} seconds`;
+            updateDotStyle();
+            updateVolume();
+        }
+
+        // --- Theme Management ---
+        function applyTheme(theme) {
+            dom.body.classList.toggle('dark-mode', theme === 'dark');
+            dom.themeToggleBtn.textContent = theme === 'dark' ? 'Light' : 'Dark';
+            dom.themeToggleBtnMain.textContent = theme === 'dark' ? 'Light' : 'Dark';
+        }
+
+        function toggleTheme() {
+            const newTheme = dom.body.classList.contains('dark-mode') ? 'light' : 'dark';
+            applyTheme(newTheme);
+            localStorage.setItem('emdr-theme', newTheme);
+        }
+
+        // --- Audio and Visual Logic ---
+        function getAudioContext() {
+            if (!state.audioContext) {
+                try {
+                    state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    state.gainNode = state.audioContext.createGain();
+                    state.gainNode.connect(state.audioContext.destination);
+                    updateVolume();
+                } catch (e) { console.error('Web Audio API not supported.'); }
+            }
+            return state.audioContext;
+        }
+
+        function updateVolume() { if (state.gainNode) state.gainNode.gain.setValueAtTime(dom.volumeSlider.value, state.audioContext.currentTime); }
+
+        function playSound(panValue) {
+            if (!state.audioContext || !dom.audioToggle.checked) return;
+            const oscillator = state.audioContext.createOscillator();
+            const panner = state.audioContext.createStereoPanner();
+            oscillator.type = dom.soundTypeSelect.value;
+            oscillator.frequency.setValueAtTime(220, state.audioContext.currentTime);
+            panner.pan.setValueAtTime(panValue, state.audioContext.currentTime);
+            oscillator.connect(panner).connect(state.gainNode);
+            oscillator.start();
+            oscillator.stop(state.audioContext.currentTime + 0.15);
+        }
+
+        function getCycleDuration() { return 4500 - (dom.speedSlider.value * 250); }
+
+        function updateAnimation() {
+            const cycleDuration = getCycleDuration();
+            const easeInOutSine = t => -(Math.cos(Math.PI * t) - 1) / 2;
+            function animate(currentTime) {
+                if (!state.sessionStartTime) state.sessionStartTime = currentTime;
+                const progress = ((currentTime - state.sessionStartTime) % cycleDuration) / cycleDuration;
+                const easedProgress = easeInOutSine(progress < 0.5 ? progress * 2 : (1 - progress) * 2);
+                drawGlowingCircle(easedProgress * dom.canvas.width);
+                state.animationId = requestAnimationFrame(animate);
+            }
+            state.animationId = requestAnimationFrame(animate);
+        }
+
+        function drawGlowingCircle(x) {
+            const ctx = state.canvasContext;
+            const { width, height } = dom.canvas;
+            ctx.clearRect(0, 0, width, height);
+            if (!dom.visualToggle.checked) return;
+            const y = height / 2;
+            const distanceFromCenter = Math.abs(x - width / 2) / (width / 2);
+            const maxSize = dom.dotSizeSlider.value;
+            const minSize = maxSize * 0.6;
+            const radius = minSize + (maxSize - minSize) * distanceFromCenter;
+            const color = dom.dotColorPicker.value;
+            const gradient = ctx.createRadialGradient(x, y, radius * 0.2, x, y, radius);
+            gradient.addColorStop(0, color);
+            gradient.addColorStop(1, 'transparent');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+        
+        function updateDotStyle() { /* This is a placeholder if needed, as drawing is dynamic */ }
+
+        function updateAudio() {
+            const interval = getCycleDuration() / 2;
+            if (state.audioIntervalId) clearInterval(state.audioIntervalId);
+            let panValue = -1;
+            playSound(panValue);
+            state.audioIntervalId = setInterval(() => {
+                if (state.isRunning && dom.audioToggle.checked) {
+                    panValue *= -1;
+                    playSound(panValue);
+                }
+            }, interval);
+        }
+
+        // --- Guided Experience Functions ---
+        function goToStep(step) {
+            saveStepData();
+            const currentActive = document.querySelector('.step-container.active');
+            if (currentActive) currentActive.classList.remove('active');
+            
+            state.currentStep = step;
+            const nextStepEl = document.getElementById(`step-${step}`);
+            if (nextStepEl) nextStepEl.classList.add('active');
+            
+            if (step === 1) startGuidedSequence();
+            else if (state.guidedTimeoutId) clearTimeout(state.guidedTimeoutId);
+
+            updateProgressIndicator();
+        }
+
+        function startGuidedSequence() {
+            state.guidedQuestionIndex = 0;
+            dom.preparationInputs.style.display = 'none';
+            dom.step1Buttons.style.display = 'none';
+            dom.guidedText.parentElement.style.display = 'flex';
+            showNextQuestion();
+        }
+
+        function showNextQuestion() {
+            if (state.guidedQuestionIndex >= GUIDED_QUESTIONS.length) {
+                dom.guidedText.parentElement.style.display = 'none';
+                dom.preparationInputs.style.display = 'block';
+                dom.step1Buttons.style.display = 'flex';
+                return;
+            }
+            const question = GUIDED_QUESTIONS[state.guidedQuestionIndex];
+            dom.guidedText.textContent = question;
+            dom.guidedText.className = 'fade-in';
+            state.guidedTimeoutId = setTimeout(() => {
+                dom.guidedText.className = 'fade-out';
+                state.guidedTimeoutId = setTimeout(() => {
+                    state.guidedQuestionIndex++;
+                    showNextQuestion();
+                }, 1500);
+            }, 3500);
+        }
+
+        function updateProgressIndicator() {
+            const dots = document.querySelectorAll('.progress-dot');
+            dots.forEach((dot, index) => {
+                const stepNum = index + 1;
+                dot.classList.remove('active', 'completed');
+                if (stepNum < state.currentStep) dot.classList.add('completed');
+                else if (stepNum === state.currentStep) dot.classList.add('active');
+            });
+        }
+
+        function saveStepData() {
+            const data = {
+                safePlace: document.getElementById('safe-place')?.value || '',
+                targetMemory: document.getElementById('target-memory')?.value || '',
+                negativeThought: document.getElementById('negative-thought')?.value || '',
+                emotions: document.getElementById('emotions')?.value || '',
+                bodySensations: document.getElementById('body-sensations')?.value || '',
+                distressLevel: dom.distressLevel?.value || 5,
+                whatCameUp: document.getElementById('what-came-up')?.value || '',
+                currentDistress: dom.currentDistress?.value || 5,
+                sessionNotes: document.getElementById('session-notes')?.value || '',
+                safePlaceReturn: document.getElementById('safe-place-return')?.value || ''
+            };
+            localStorage.setItem('emdr-current-session', JSON.stringify(data));
+        }
+
+        function loadSavedData() {
+            const saved = localStorage.getItem('emdr-current-session');
+            if (saved) {
+                const data = JSON.parse(saved);
+                Object.keys(data).forEach(key => {
+                    const elementId = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+                    const element = document.getElementById(elementId);
+                    if (element) {
+                        element.value = data[key];
+                        if (element.type === 'range') {
+                            const valueSpan = document.getElementById(element.id + '-value');
+                            if (valueSpan) valueSpan.textContent = data[key];
+                        }
+                    }
+                });
+            }
+        }
+
+        function saveSession() {
+            saveStepData();
+            const sessionData = JSON.parse(localStorage.getItem('emdr-current-session') || '{}');
+            sessionData.timestamp = new Date().toISOString();
+            sessionData.date = new Date().toLocaleDateString();
+            sessionData.time = new Date().toLocaleTimeString();
+            const history = JSON.parse(localStorage.getItem('emdr-session-history') || '[]');
+            history.unshift(sessionData);
+            if (history.length > 50) history.splice(50);
+            localStorage.setItem('emdr-session-history', JSON.stringify(history));
+            localStorage.removeItem('emdr-current-session');
+            showToast('Session saved successfully!');
+        }
+
+        function startNewSession() {
+            localStorage.removeItem('emdr-current-session');
+            document.querySelectorAll('textarea').forEach(t => t.value = '');
+            dom.distressLevel.value = 5;
+            dom.currentDistress.value = 5;
+            dom.distressValue.textContent = '5';
+            dom.currentDistressValue.textContent = '5';
+            dom.mainContent.style.display = 'none';
+            dom.modeSelection.style.display = 'flex';
+        }
+
+        function showHistory() {
+            const history = JSON.parse(localStorage.getItem('emdr-session-history') || '[]');
+            const container = document.getElementById('session-history');
+            if (history.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666;">No sessions saved yet.</p>';
+            } else {
+                container.innerHTML = history.map(s => `
+                    <div class="history-entry">
+                        <div class="history-date">${s.date} at ${s.time}</div>
+                        <div><strong>Target:</strong> ${s.targetMemory.substring(0,100)}${s.targetMemory.length > 100 ? '...' : ''}</div>
+                        <div><strong>Distress:</strong> ${s.distressLevel}/10 → <strong>Final:</strong> ${s.currentDistress}/10</div>
+                        ${s.sessionNotes ? `<div><strong>Notes:</strong> ${s.sessionNotes}</div>` : ''}
+                    </div>`).join('');
+            }
+            document.querySelector('.step-container.active').classList.remove('active');
+            document.getElementById('history-view').classList.add('active');
+        }
+
+        function hideHistory() {
+            document.getElementById('history-view').classList.remove('active');
+            document.getElementById(`step-${state.currentStep}`).classList.add('active');
+        }
+
+        function clearHistory() {
+            showConfirmationModal('Are you sure you want to clear all session history? This cannot be undone.', () => {
+                localStorage.removeItem('emdr-session-history');
+                showHistory();
+                showToast('History cleared.');
+            });
+        }
+
+        // --- Session Control ---
+        function startSet() {
+            if (state.isRunning) return;
+            state.isRunning = true;
+            state.sessionStartTime = null;
+            const context = getAudioContext();
+            if (context && context.state === 'suspended') context.resume();
+            dom.mainContent.style.display = 'none';
+            dom.sessionView.style.display = 'flex';
+            dom.sessionView.requestFullscreen().catch(err => console.warn(`Fullscreen failed: ${err.message}`));
+            dom.canvas.width = window.innerWidth;
+            dom.canvas.height = window.innerHeight;
+            updateAnimation();
+            updateAudio();
+            const duration = parseInt(dom.durationSlider.value, 10);
+            updateSessionProgress(duration);
+            state.setEndTimeoutId = setTimeout(stopSet, duration * 1000);
+        }
+
+        function updateSessionProgress(totalDuration) {
+            const progressEl = document.getElementById('session-progress');
+            state.sessionStartTime = Date.now(); // Ensure start time is set here
+            state.progressInterval = setInterval(() => {
+                if (!state.isRunning) return clearInterval(state.progressInterval);
+                const elapsed = Math.floor((Date.now() - state.sessionStartTime) / 1000);
+                const remaining = Math.max(0, totalDuration - elapsed);
+                progressEl.textContent = remaining > 0 ? `${remaining}s remaining` : 'Completing...';
+            }, 1000);
+        }
+
+        function stopSet() {
+            if (!state.isRunning) return;
+            state.isRunning = false;
+            if (state.animationId) cancelAnimationFrame(state.animationId);
+            if (state.audioIntervalId) clearInterval(state.audioIntervalId);
+            if (state.setEndTimeoutId) clearTimeout(state.setEndTimeoutId);
+            if (state.progressInterval) clearInterval(state.progressInterval);
+            dom.sessionView.style.display = 'none';
+            dom.mainContent.style.display = 'flex';
+            if (document.fullscreenElement) document.exitFullscreen();
+        }
+
+        // --- UI Helpers ---
+        function showToast(message) {
+            const toast = document.getElementById('toast-notification');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function showConfirmationModal(message, onConfirm) {
+            const modal = document.getElementById('custom-modal');
+            document.getElementById('modal-text').textContent = message;
+            modal.classList.add('show');
+            const confirmBtn = document.getElementById('modal-confirm-btn');
+            const cancelBtn = document.getElementById('modal-cancel-btn');
+            const confirmHandler = () => {
+                modal.classList.remove('show');
+                onConfirm();
+                cleanup();
+            };
+            const cancelHandler = () => {
+                modal.classList.remove('show');
+                cleanup();
+            };
+            const cleanup = () => {
+                confirmBtn.removeEventListener('click', confirmHandler);
+                cancelBtn.removeEventListener('click', cancelHandler);
+            };
+            confirmBtn.addEventListener('click', confirmHandler, { once: true });
+            cancelBtn.addEventListener('click', cancelHandler, { once: true });
+        }
+    </script>
+</body>
+</html>

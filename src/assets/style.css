@@ -1,0 +1,410 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --bg-color: #f0f2f5;
+    --text-color: #333;
+    --container-bg: #ffffff;
+    --primary-color: #007bff;
+    --primary-hover: #0056b3;
+    --border-color: #dee2e6;
+    --dot-color: #007bff;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode {
+    --bg-color: #121212;
+    --text-color: #e0e0e0;
+    --container-bg: #1e1e1e;
+    --border-color: #444;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.main-container {
+    width: 100%;
+    max-width: 700px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.main-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.home-button {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 10px 18px;
+    font-size: 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+.home-button:hover {
+    background-color: var(--container-bg);
+    border-color: var(--primary-color);
+}
+
+.container {
+    background-color: var(--container-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 30px 40px;
+    width: 100%;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 24px var(--shadow-color);
+    box-sizing: border-box;
+}
+
+.button-group {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 25px;
+    flex-wrap: wrap;
+}
+
+button {
+    padding: 14px 30px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    transition: background-color 0.2s, transform 0.1s;
+    letter-spacing: 0.5px;
+}
+button:hover { background-color: var(--primary-hover); }
+button:active { transform: scale(0.98); }
+
+.btn-secondary {
+    background-color: transparent;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+}
+.btn-secondary:hover { background-color: var(--primary-color); color: white; }
+
+.step-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 10px 0 30px 0;
+    color: var(--primary-color);
+    text-align: center;
+}
+
+.journal-section { margin: 25px 0; }
+.journal-section label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    font-size: 16px;
+}
+.journal-section textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 16px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    resize: vertical;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+.journal-section textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+}
+
+.slider-control {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 350px;
+    margin: 15px auto;
+}
+.slider-control label {
+    font-weight: 500;
+    margin-bottom: 15px;
+}
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    background: var(--border-color);
+    border-radius: 5px;
+    outline: none;
+    transition: background 0.3s;
+}
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+input[type="range"]::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+/* --- Enhanced Progress Bar --- */
+.progress-container {
+    flex: 1;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.progress-bar-wrapper {
+    position: relative;
+    padding: 0 20px;
+}
+
+.progress-bar-track {
+    position: absolute;
+    top: 50%;
+    left: 20px;
+    right: 20px;
+    height: 3px;
+    background-color: var(--border-color);
+    border-radius: 2px;
+    transform: translateY(-50%);
+}
+
+.progress-bar-fill {
+    position: absolute;
+    top: 50%;
+    left: 20px;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    border-radius: 2px;
+    transform: translateY(-50%);
+    transition: width 0.3s ease;
+}
+
+.progress-steps {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+}
+
+.progress-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+}
+
+.progress-step-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--container-bg);
+    border: 3px solid var(--border-color);
+    color: var(--text-color);
+    font-weight: 600;
+    transition: all 0.3s ease;
+    margin-bottom: 8px;
+}
+
+.progress-step.completed .progress-step-circle {
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-color: #10b981;
+    color: white;
+}
+
+.progress-step.active .progress-step-circle {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border-color: #3b82f6;
+    color: white;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+.progress-step.future .progress-step-circle {
+    background-color: var(--bg-color);
+    border-color: var(--border-color);
+    color: #9ca3af;
+}
+
+.progress-step-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-color);
+    text-align: center;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.progress-step.active .progress-step-label,
+.progress-step.completed .progress-step-label {
+    opacity: 1;
+    font-weight: 600;
+}
+
+/* --- Enhanced Setting Cards --- */
+.settings-grid {
+    gap: 1.5rem;
+}
+
+.setting-card {
+    transition: all 0.2s ease;
+}
+
+.setting-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.setting-icon {
+    transition: transform 0.2s ease;
+}
+
+.setting-card:hover .setting-icon {
+    transform: scale(1.05);
+}
+
+/* --- Enhanced Buttons --- */
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    background-color: transparent;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background-color: var(--primary-color);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* --- Home Button Enhancement --- */
+.home-button {
+    background: var(--container-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 10px 18px;
+    font-size: 14px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.home-button:hover {
+    background-color: var(--bg-color);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.home-button svg {
+    transition: transform 0.2s ease;
+}
+
+.home-button:hover svg {
+    transform: translateX(-2px);
+}
+
+/* --- Session (BLS) View --- */
+#session-view {
+    background-color: #000;
+}
+.session-ui {
+    bottom: 30px;
+}
+.session-ui button {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+}
+.session-ui button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+.session-settings-overlay {
+    background-color: rgba(0,0,0,0.7);
+}
+.controls-grid {
+    gap: 25px;
+    padding: 40px;
+}
+
+/* --- Toast --- */
+.toast {
+    background-color: #323232;
+    color: white;
+    padding: 16px 28px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+/* --- History View --- */
+.history-entry {
+    background-color: var(--container-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: box-shadow 0.2s;
+}
+.history-entry:hover {
+    box-shadow: 0 4px 15px var(--shadow-color);
+}
+
+/* --- Responsive --- */
+@media (max-width: 600px) {
+    .container { padding: 25px; }
+    .step-title { font-size: 24px; }
+    .main-header { flex-direction: column; gap: 20px; }
+    .progress-bar { width: 90%; }
+}

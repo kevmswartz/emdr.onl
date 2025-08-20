@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create:*)",
+      "Bash(rm:*)",
+      "Bash(mv:*)",
+      "Bash(true)",
+      "Bash(npm install)",
+      "Bash(npm install:*)",
+      "Bash(npx tailwindcss init:*)",
+      "Bash(./node_modules/.bin/tailwindcss:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npx create-expo-app:*)",
+      "Bash(npm start)",
+      "Bash(npx expo install:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npx expo start:*)",
+      "Bash(npm start:*)",
+      "Bash(npx tsc:*)",
+      "WebSearch",
+      "Bash(mkdir:*)",
+      "Bash(npm test)",
+      "Bash(npm test:*)",
+      "Bash(curl:*)"
+    ],
+    "deny": [],
+    "defaultMode": "acceptEdits"
+  }
+}

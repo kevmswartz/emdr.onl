@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(npm create:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nPhase 1 MVP: Core BLS functionality\n\nImplemented complete Phase 1 from REBUILD_SPEC.md:\n- Project setup with Vite + Vue 3 + TypeScript + Tailwind\n- Canvas-based horizontal dot animation with smooth easing\n- Web Audio API with stereo panning (220Hz sine wave)\n- 3-second countdown before session starts\n- Session timer with circular progress indicator\n- Settings UI: speed (1-10), duration (10-180s), volume (0-100%), color picker\n- Pause/resume and stop controls\n- LocalStorage persistence for settings\n- Screen wake lock during sessions\n- Fullscreen mode\n- Composables: useAudio, useWakeLock\n- Full TypeScript with proper type definitions\n\nApp is fully functional at http://localhost:8080\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

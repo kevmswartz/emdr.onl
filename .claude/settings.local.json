@@ -5,7 +5,8 @@
       "Bash(npm create:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nPhase 1 MVP: Core BLS functionality\n\nImplemented complete Phase 1 from REBUILD_SPEC.md:\n- Project setup with Vite + Vue 3 + TypeScript + Tailwind\n- Canvas-based horizontal dot animation with smooth easing\n- Web Audio API with stereo panning (220Hz sine wave)\n- 3-second countdown before session starts\n- Session timer with circular progress indicator\n- Settings UI: speed (1-10), duration (10-180s), volume (0-100%), color picker\n- Pause/resume and stop controls\n- LocalStorage persistence for settings\n- Screen wake lock during sessions\n- Fullscreen mode\n- Composables: useAudio, useWakeLock\n- Full TypeScript with proper type definitions\n\nApp is fully functional at http://localhost:8080\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git commit -m \"$(cat <<''EOF''\nPhase 2: Enhanced Experience\n\nImplemented complete Phase 2 from REBUILD_SPEC.md:\n- Multiple movement patterns: horizontal, vertical, circular, figure-8\n- Additional sound types: sine, triangle, sawtooth waveforms\n- Haptic feedback on movement completion and countdown\n- Full keyboard shortcuts:\n  - Space: pause/resume\n  - Esc: stop session\n  - +/-: adjust speed\n  - [/]: adjust volume\n- Toast notification system with smooth transitions\n- Updated settings UI with pattern and sound type selectors\n- Improved movement system with unified pattern composable\n- Pan audio based on pattern position (works for all patterns)\n\nAll patterns use smooth easing and work seamlessly.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

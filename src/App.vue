@@ -153,6 +153,7 @@ const settings = ref<Settings>({
   volume: 0.5,
   frequency: 220,
   duration: 60,
+  enableJournaling: false,
   hapticFeedback: true,
   keyboardShortcuts: true,
 })

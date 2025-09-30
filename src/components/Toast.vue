@@ -18,7 +18,7 @@ const props = defineProps<{
 }>()
 
 const visible = ref(false)
-let timeout: NodeJS.Timeout
+let timeout: number
 
 watch(
   () => props.message,
@@ -26,7 +26,7 @@ watch(
     if (newMessage) {
       visible.value = true
       clearTimeout(timeout)
-      timeout = setTimeout(() => {
+      timeout = window.setTimeout(() => {
         visible.value = false
       }, props.duration || 3000)
     }

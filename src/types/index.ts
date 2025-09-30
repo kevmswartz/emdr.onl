@@ -17,8 +17,44 @@ export interface Settings {
 
   // Session
   duration: number // seconds
+  enableJournaling: boolean
 
   // UX
   hapticFeedback: boolean
   keyboardShortcuts: boolean
+}
+
+export interface JournalEntry {
+  // Pre-session
+  targetMemory?: string
+  initialDistress?: number // 0-10
+  negativeBelief?: string
+  bodySensations?: string
+
+  // Post-session
+  whatCameUp?: string
+  currentDistress?: number // 0-10
+  notes?: string
+}
+
+export interface Session {
+  id: string // uuid
+  timestamp: number
+  duration: number // seconds
+
+  // Settings snapshot
+  settings: Settings
+
+  // Journal if enabled
+  journal?: JournalEntry
+
+  // Calculated
+  distressReduction?: number
+}
+
+export interface Statistics {
+  totalSessions: number
+  totalDuration: number // seconds
+  averageDistressReduction: number
+  averageDuration: number // seconds
 }

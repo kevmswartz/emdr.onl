@@ -73,7 +73,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, toRefs } from 'vue'
+import { ref, computed, onMounted, onUnmounted, toRefs } from 'vue'
 import type { Settings } from '../types'
 import { useAudio } from '../composables/useAudio'
 import { useWakeLock } from '../composables/useWakeLock'

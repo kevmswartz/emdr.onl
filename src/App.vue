@@ -11,6 +11,22 @@
       <div class="bg-white rounded-2xl shadow-sm p-6 space-y-4">
         <h2 class="text-lg font-semibold text-gray-900">Quick Settings</h2>
 
+        <!-- Pattern -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Movement Pattern
+          </label>
+          <select
+            v-model="settings.pattern"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="horizontal">→ Horizontal</option>
+            <option value="vertical">↕ Vertical</option>
+            <option value="circular">⭕ Circular</option>
+            <option value="figure8">∞ Figure-8</option>
+          </select>
+        </div>
+
         <!-- Duration -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -40,6 +56,21 @@
           />
         </div>
 
+        <!-- Sound Type -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Sound Type
+          </label>
+          <select
+            v-model="settings.soundType"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="sine">🎵 Soft (Sine)</option>
+            <option value="triangle">📐 Mellow (Triangle)</option>
+            <option value="sawtooth">🔊 Bright (Sawtooth)</option>
+          </select>
+        </div>
+
         <!-- Volume -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -66,6 +97,19 @@
             class="w-full h-12 rounded-lg cursor-pointer"
           />
         </div>
+
+        <!-- Haptic Feedback -->
+        <div class="flex items-center">
+          <input
+            type="checkbox"
+            id="haptic"
+            v-model="settings.hapticFeedback"
+            class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          />
+          <label for="haptic" class="ml-2 text-sm font-medium text-gray-700">
+            📳 Haptic Feedback
+          </label>
+        </div>
       </div>
 
       <!-- Start Button -->
@@ -82,7 +126,11 @@
       v-if="isSessionActive"
       :settings="settings"
       @end-session="endSession"
+      @show-toast="showToast"
     />
+
+    <!-- Toast Notifications -->
+    <Toast :message="toastMessage" />
   </div>
 </template>
 
@@ -90,17 +138,23 @@
 import { ref, onMounted } from 'vue'
 import type { Settings } from './types'
 import SessionView from './components/SessionView.vue'
+import Toast from './components/Toast.vue'
 
 const isSessionActive = ref(false)
+const toastMessage = ref('')
 const settings = ref<Settings>({
+  pattern: 'horizontal',
   speed: 5,
   dotSize: 60,
   dotColor: '#10b981',
   backgroundColor: '#000000',
   audioEnabled: true,
+  soundType: 'sine',
   volume: 0.5,
   frequency: 220,
   duration: 60,
+  hapticFeedback: true,
+  keyboardShortcuts: true,
 })
 
 const startSession = () => {
@@ -109,6 +163,11 @@ const startSession = () => {
 
 const endSession = () => {
   isSessionActive.value = false
+  showToast('Session complete!')
+}
+
+const showToast = (message: string) => {
+  toastMessage.value = message
 }
 
 // Load settings from localStorage

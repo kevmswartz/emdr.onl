@@ -77,6 +77,8 @@ import { ref, computed, onMounted, onUnmounted, watch, toRefs } from 'vue'
 import type { Settings } from '../types'
 import { useAudio } from '../composables/useAudio'
 import { useWakeLock } from '../composables/useWakeLock'
+import { useMovementPattern } from '../composables/useMovementPattern'
+import { useHaptics } from '../composables/useHaptics'
 
 const props = defineProps<{
   settings: Settings
@@ -84,6 +86,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   endSession: []
+  showToast: [message: string]
 }>()
 
 const { settings } = toRefs(props)
@@ -98,18 +101,20 @@ const elapsedTime = ref(0)
 const startTime = ref(0)
 const animationFrameId = ref<number | null>(null)
 
-// Dot position (0 = left, 1 = right)
-const dotPosition = ref(0.5)
-const targetPosition = ref(1)
+// Movement state
+const movementProgress = ref(0)
 const movementStartTime = ref(0)
-const isMoving = ref(false)
+const movementDirection = ref(1) // 1 or -1
 
-// Audio & Wake Lock
+// Composables
 const { initAudio, playSound } = useAudio(
   computed(() => settings.value.volume),
-  computed(() => settings.value.frequency)
+  computed(() => settings.value.frequency),
+  computed(() => settings.value.soundType)
 )
 const { acquireWakeLock, releaseWakeLock } = useWakeLock()
+const { calculatePosition, getPanValue } = useMovementPattern()
+const { vibrate } = useHaptics()
 
 // Timer calculations
 const timeRemaining = computed(() => {
@@ -128,25 +133,13 @@ const getMovementDuration = () => {
   return 2500 - (settings.value.speed * 200)
 }
 
-// Start movement to target
-const startMovement = (target: number) => {
-  targetPosition.value = target
-  isMoving.value = true
-  movementStartTime.value = performance.now()
-
-  // Play audio at target side
-  const panValue = target === 1 ? 1 : -1
-  if (settings.value.audioEnabled) {
-    playSound(panValue)
-  }
-}
-
 // Animation loop
 const animate = (currentTime: number) => {
   if (isPaused.value) return
 
   if (!startTime.value) {
     startTime.value = currentTime
+    movementStartTime.value = currentTime
   }
 
   elapsedTime.value = currentTime - startTime.value
@@ -170,40 +163,41 @@ const animate = (currentTime: number) => {
   // Clear canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-  // Calculate dot position
-  let currentDotPosition = dotPosition.value
+  // Calculate movement progress
+  const movementElapsed = currentTime - movementStartTime.value
+  const movementDuration = getMovementDuration()
+  movementProgress.value = Math.min(movementElapsed / movementDuration, 1)
 
-  if (isMoving.value) {
-    const movementElapsed = currentTime - movementStartTime.value
-    const movementDuration = getMovementDuration()
-    const progress = Math.min(movementElapsed / movementDuration, 1)
+  // Ease in-out quad
+  const easeInOutQuad = (t: number) =>
+    t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
 
-    // Ease in-out quad
-    const easeInOutQuad = (t: number) =>
-      t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
+  const easedProgress = easeInOutQuad(movementProgress.value)
 
-    const easedProgress = easeInOutQuad(progress)
-    currentDotPosition = dotPosition.value + (targetPosition.value - dotPosition.value) * easedProgress
+  // Get position from pattern
+  const position = calculatePosition(settings.value.pattern, easedProgress, movementDirection.value)
 
-    // Movement complete
-    if (progress >= 1) {
-      dotPosition.value = targetPosition.value
-      isMoving.value = false
-
-      // Start movement to opposite side after brief pause
-      setTimeout(() => {
-        if (!isPaused.value) {
-          const newTarget = targetPosition.value === 1 ? 0 : 1
-          startMovement(newTarget)
-        }
-      }, 200)
+  // Check if movement cycle complete
+  if (movementProgress.value >= 1) {
+    // Play audio and haptic at end of movement
+    const panValue = getPanValue(settings.value.pattern, position)
+    if (settings.value.audioEnabled) {
+      playSound(panValue)
     }
+    if (settings.value.hapticFeedback) {
+      vibrate(30)
+    }
+
+    // Reverse direction and restart
+    movementDirection.value *= -1
+    movementStartTime.value = currentTime
+    movementProgress.value = 0
   }
 
   // Draw dot
-  const margin = 50
-  const x = currentDotPosition * (canvas.width - margin * 2) + margin
-  const y = canvas.height / 2
+  const margin = 80
+  const x = position.x * (canvas.width - margin * 2) + margin
+  const y = position.y * (canvas.height - margin * 2) + margin
   const radius = settings.value.dotSize / 2
 
   // Gradient
@@ -224,6 +218,9 @@ const animate = (currentTime: number) => {
 const startCountdown = () => {
   const interval = setInterval(() => {
     countdown.value--
+    if (settings.value.hapticFeedback) {
+      vibrate(50)
+    }
     if (countdown.value === 0) {
       clearInterval(interval)
       isCountdown.value = false
@@ -231,9 +228,8 @@ const startCountdown = () => {
       // Initialize audio
       initAudio()
 
-      // Start session
+      // Start animation
       setTimeout(() => {
-        startMovement(1) // Move to right first
         animationFrameId.value = requestAnimationFrame(animate)
       }, 300)
     }
@@ -247,15 +243,15 @@ const togglePause = () => {
     // Resume
     const pauseDuration = performance.now() - (startTime.value + elapsedTime.value)
     startTime.value += pauseDuration
-    if (isMoving.value) {
-      movementStartTime.value += pauseDuration
-    }
+    movementStartTime.value += pauseDuration
     animationFrameId.value = requestAnimationFrame(animate)
+    emit('showToast', 'Resumed')
   } else {
     // Pause
     if (animationFrameId.value) {
       cancelAnimationFrame(animationFrameId.value)
     }
+    emit('showToast', 'Paused')
   }
 }
 
@@ -270,6 +266,52 @@ const stopSession = () => {
   emit('endSession')
 }
 
+const adjustSpeed = (delta: number) => {
+  if (!settings.value.keyboardShortcuts) return
+  settings.value.speed = Math.max(1, Math.min(10, settings.value.speed + delta))
+  emit('showToast', `Speed: ${settings.value.speed}`)
+}
+
+const adjustVolume = (delta: number) => {
+  if (!settings.value.keyboardShortcuts) return
+  settings.value.volume = Math.max(0, Math.min(1, settings.value.volume + delta))
+  emit('showToast', `Volume: ${Math.round(settings.value.volume * 100)}%`)
+}
+
+// Keyboard shortcuts
+const handleKeydown = (e: KeyboardEvent) => {
+  if (!settings.value.keyboardShortcuts || isCountdown.value) return
+
+  switch (e.key) {
+    case ' ':
+      e.preventDefault()
+      togglePause()
+      break
+    case 'Escape':
+      e.preventDefault()
+      stopSession()
+      break
+    case '+':
+    case '=':
+      e.preventDefault()
+      adjustSpeed(1)
+      break
+    case '-':
+    case '_':
+      e.preventDefault()
+      adjustSpeed(-1)
+      break
+    case '[':
+      e.preventDefault()
+      adjustVolume(-0.1)
+      break
+    case ']':
+      e.preventDefault()
+      adjustVolume(0.1)
+      break
+  }
+}
+
 onMounted(() => {
   // Request fullscreen
   if (containerRef.value?.requestFullscreen) {
@@ -281,6 +323,9 @@ onMounted(() => {
   // Acquire wake lock
   acquireWakeLock()
 
+  // Add keyboard listener
+  window.addEventListener('keydown', handleKeydown)
+
   // Start countdown
   startCountdown()
 })
@@ -290,5 +335,6 @@ onUnmounted(() => {
     cancelAnimationFrame(animationFrameId.value)
   }
   releaseWakeLock()
+  window.removeEventListener('keydown', handleKeydown)
 })
 </script>

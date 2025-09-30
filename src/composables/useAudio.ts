@@ -1,6 +1,7 @@
 import { ref, onUnmounted, type Ref } from 'vue'
+import type { SoundType } from '../types'
 
-export function useAudio(volume: Ref<number>, frequency: Ref<number>) {
+export function useAudio(volume: Ref<number>, frequency: Ref<number>, soundType: Ref<SoundType>) {
   const audioContext = ref<AudioContext | null>(null)
   const gainNode = ref<GainNode | null>(null)
 
@@ -35,7 +36,7 @@ export function useAudio(volume: Ref<number>, frequency: Ref<number>) {
     const oscillator = audioContext.value.createOscillator()
     const panner = audioContext.value.createStereoPanner()
 
-    oscillator.type = 'sine'
+    oscillator.type = soundType.value
     oscillator.frequency.setValueAtTime(frequency.value, audioContext.value.currentTime)
 
     panner.pan.setValueAtTime(panValue, audioContext.value.currentTime)

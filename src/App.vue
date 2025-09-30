@@ -1,5 +1,6 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center p-4">
+  <!-- Home View -->
+  <div v-if="currentView === 'home'" class="min-h-screen flex items-center justify-center p-4">
     <div class="w-full max-w-md space-y-8">
       <!-- Header -->
       <div class="text-center">
@@ -98,6 +99,19 @@
           />
         </div>
 
+        <!-- Enable Journaling -->
+        <div class="flex items-center">
+          <input
+            type="checkbox"
+            id="journaling"
+            v-model="settings.enableJournaling"
+            class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          />
+          <label for="journaling" class="ml-2 text-sm font-medium text-gray-700">
+            📝 Enable Journaling
+          </label>
+        </div>
+
         <!-- Haptic Feedback -->
         <div class="flex items-center">
           <input
@@ -112,36 +126,82 @@
         </div>
       </div>
 
-      <!-- Start Button -->
-      <button
-        @click="startSession"
-        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-xl transition-colors touch-target"
-      >
-        🌀 Start Session
-      </button>
+      <!-- Action Buttons -->
+      <div class="space-y-3">
+        <button
+          @click="handleStartSession"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-xl transition-colors touch-target"
+        >
+          🌀 Start Session
+        </button>
+        <button
+          @click="goToHistory"
+          class="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium py-3 px-6 rounded-xl transition-colors"
+        >
+          📊 View History
+        </button>
+      </div>
     </div>
-
-    <!-- Session View (Fullscreen) -->
-    <SessionView
-      v-if="isSessionActive"
-      :settings="settings"
-      @end-session="endSession"
-      @show-toast="showToast"
-    />
-
-    <!-- Toast Notifications -->
-    <Toast :message="toastMessage" />
   </div>
+
+  <!-- Pre-Session Journal -->
+  <PreSessionJournal
+    v-else-if="currentView === 'pre-journal'"
+    @continue="handlePreJournalContinue"
+    @skip="startBLSSession"
+  />
+
+  <!-- Session View (Fullscreen) -->
+  <SessionView
+    v-else-if="currentView === 'session'"
+    :settings="settings"
+    @end-session="handleSessionEnd"
+    @show-toast="showToast"
+  />
+
+  <!-- Post-Session Journal -->
+  <PostSessionJournal
+    v-else-if="currentView === 'post-journal'"
+    :initial-journal="currentJournal"
+    @save="handlePostJournalSave"
+    @skip="finishSession"
+  />
+
+  <!-- History View -->
+  <HistoryView
+    v-else-if="currentView === 'history'"
+    :sessions="sessions"
+    :statistics="statistics"
+    :is-loading="isLoading"
+    @back="goHome"
+    @delete="deleteSession"
+    @export-json="exportToJSON"
+    @export-csv="exportToCSV"
+    @clear-all="clearAllSessions"
+  />
+
+  <!-- Toast Notifications -->
+  <Toast :message="toastMessage" />
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import type { Settings } from './types'
+import { ref, onMounted, watch } from 'vue'
+import type { Settings, JournalEntry } from './types'
 import SessionView from './components/SessionView.vue'
+import PreSessionJournal from './components/PreSessionJournal.vue'
+import PostSessionJournal from './components/PostSessionJournal.vue'
+import HistoryView from './components/HistoryView.vue'
 import Toast from './components/Toast.vue'
+import { useSessionStorage } from './composables/useSessionStorage'
 
-const isSessionActive = ref(false)
+type View = 'home' | 'pre-journal' | 'session' | 'post-journal' | 'history'
+
+const currentView = ref<View>('home')
 const toastMessage = ref('')
+const sessionStartTime = ref(0)
+const sessionDuration = ref(0)
+const currentJournal = ref<JournalEntry>({})
+
 const settings = ref<Settings>({
   pattern: 'horizontal',
   speed: 5,
@@ -158,21 +218,128 @@ const settings = ref<Settings>({
   keyboardShortcuts: true,
 })
 
-const startSession = () => {
-  isSessionActive.value = true
+// Session storage
+const {
+  sessions,
+  isLoading,
+  statistics,
+  loadSessions,
+  saveSession,
+  deleteSession: removeSession,
+  clearAllSessions: clearAll,
+  exportToJSON,
+  exportToCSV,
+} = useSessionStorage()
+
+// Navigation
+const goHome = () => {
+  currentView.value = 'home'
 }
 
-const endSession = () => {
-  isSessionActive.value = false
+const goToHistory = () => {
+  currentView.value = 'history'
+}
+
+// Session flow
+const handleStartSession = () => {
+  if (settings.value.enableJournaling) {
+    currentView.value = 'pre-journal'
+  } else {
+    startBLSSession()
+  }
+}
+
+const handlePreJournalContinue = (journal: JournalEntry) => {
+  currentJournal.value = { ...journal }
+  startBLSSession()
+}
+
+const startBLSSession = () => {
+  sessionStartTime.value = Date.now()
+  currentView.value = 'session'
+}
+
+const handleSessionEnd = () => {
+  sessionDuration.value = Math.floor((Date.now() - sessionStartTime.value) / 1000)
+
+  if (settings.value.enableJournaling) {
+    currentView.value = 'post-journal'
+  } else {
+    finishSession()
+  }
+}
+
+const handlePostJournalSave = async (postJournal: JournalEntry) => {
+  // Merge pre and post journal
+  const fullJournal: JournalEntry = {
+    ...currentJournal.value,
+    ...postJournal,
+  }
+
+  // Calculate distress reduction
+  let distressReduction: number | undefined
+  if (fullJournal.initialDistress !== undefined && fullJournal.currentDistress !== undefined) {
+    distressReduction = fullJournal.initialDistress - fullJournal.currentDistress
+  }
+
+  // Save session
+  try {
+    await saveSession({
+      id: crypto.randomUUID(),
+      timestamp: sessionStartTime.value,
+      duration: sessionDuration.value,
+      settings: { ...settings.value },
+      journal: fullJournal,
+      distressReduction,
+    })
+    showToast('Session saved!')
+  } catch (error) {
+    showToast('Failed to save session')
+    console.error(error)
+  }
+
+  finishSession()
+}
+
+const finishSession = () => {
+  currentJournal.value = {}
+  currentView.value = 'home'
   showToast('Session complete!')
 }
 
+// History actions
+const deleteSession = async (id: string) => {
+  if (confirm('Delete this session?')) {
+    try {
+      await removeSession(id)
+      showToast('Session deleted')
+    } catch (error) {
+      showToast('Failed to delete session')
+    }
+  }
+}
+
+const clearAllSessions = async () => {
+  try {
+    await clearAll()
+    showToast('All sessions cleared')
+  } catch (error) {
+    showToast('Failed to clear sessions')
+  }
+}
+
+// Toast
 const showToast = (message: string) => {
   toastMessage.value = message
 }
 
-// Load settings from localStorage
-onMounted(() => {
+// Persistence
+const saveSettings = () => {
+  localStorage.setItem('emdr-settings', JSON.stringify(settings.value))
+}
+
+onMounted(async () => {
+  // Load settings
   const stored = localStorage.getItem('emdr-settings')
   if (stored) {
     try {
@@ -181,14 +348,10 @@ onMounted(() => {
       console.error('Failed to load settings:', e)
     }
   }
+
+  // Load sessions
+  await loadSessions()
 })
 
-// Save settings to localStorage when changed
-const saveSettings = () => {
-  localStorage.setItem('emdr-settings', JSON.stringify(settings.value))
-}
-
-// Watch for settings changes
-import { watch } from 'vue'
 watch(settings, saveSettings, { deep: true })
 </script>

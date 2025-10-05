@@ -79,6 +79,7 @@ import { useAudio } from '../composables/useAudio'
 import { useWakeLock } from '../composables/useWakeLock'
 import { useMovementPattern } from '../composables/useMovementPattern'
 import { useHaptics } from '../composables/useHaptics'
+import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts'
 
 const props = defineProps<{
   settings: Settings
@@ -106,6 +107,13 @@ const movementProgress = ref(0)
 const movementStartTime = ref(0)
 const movementDirection = ref(1) // 1 or -1
 
+// Bounce pattern state
+const bouncePosition = ref({ x: 0.5, y: 0.5 })
+const bounceVelocity = ref({
+  x: (Math.random() - 0.5) * 0.003,
+  y: (Math.random() - 0.5) * 0.003
+})
+
 // Composables
 const { initAudio, playSound } = useAudio(
   computed(() => settings.value.volume),
@@ -115,6 +123,36 @@ const { initAudio, playSound } = useAudio(
 const { acquireWakeLock, releaseWakeLock } = useWakeLock()
 const { calculatePosition, getPanValue } = useMovementPattern()
 const { vibrate } = useHaptics()
+
+// Keyboard shortcuts
+useKeyboardShortcuts({
+  onSpace: () => !isCountdown.value && togglePause(),
+  onEscape: () => !isCountdown.value && stopSession(),
+  onPlusOrEqual: () => {
+    if (!isCountdown.value && settings.value.speed < 10) {
+      settings.value.speed++
+      emit('showToast', `Speed: ${settings.value.speed}`)
+    }
+  },
+  onMinus: () => {
+    if (!isCountdown.value && settings.value.speed > 1) {
+      settings.value.speed--
+      emit('showToast', `Speed: ${settings.value.speed}`)
+    }
+  },
+  onBracketLeft: () => {
+    if (!isCountdown.value && settings.value.volume > 0) {
+      settings.value.volume = Math.max(0, settings.value.volume - 0.1)
+      emit('showToast', `Volume: ${Math.round(settings.value.volume * 100)}%`)
+    }
+  },
+  onBracketRight: () => {
+    if (!isCountdown.value && settings.value.volume < 1) {
+      settings.value.volume = Math.min(1, settings.value.volume + 0.1)
+      emit('showToast', `Volume: ${Math.round(settings.value.volume * 100)}%`)
+    }
+  }
+})
 
 // Timer calculations
 const timeRemaining = computed(() => {
@@ -175,10 +213,38 @@ const animate = (currentTime: number) => {
   const easedProgress = easeInOutQuad(movementProgress.value)
 
   // Get position from pattern
-  const position = calculatePosition(settings.value.pattern, easedProgress, movementDirection.value)
+  let position
+  if (settings.value.pattern === 'bounce') {
+    // Update bounce position with physics
+    const speed = settings.value.speed * 0.0005 // Speed multiplier
+    bouncePosition.value.x += bounceVelocity.value.x * speed * 60
+    bouncePosition.value.y += bounceVelocity.value.y * speed * 60
 
-  // Check if movement cycle complete
-  if (movementProgress.value >= 1) {
+    // Bounce off edges
+    const margin = 0.05 // Keep away from edges
+    if (bouncePosition.value.x <= margin || bouncePosition.value.x >= 1 - margin) {
+      bounceVelocity.value.x *= -1
+      bouncePosition.value.x = Math.max(margin, Math.min(1 - margin, bouncePosition.value.x))
+      // Play sound on bounce
+      if (settings.value.audioEnabled) {
+        playSound((bouncePosition.value.x - 0.5) * 2)
+      }
+      if (settings.value.hapticFeedback) {
+        vibrate(20)
+      }
+    }
+    if (bouncePosition.value.y <= margin || bouncePosition.value.y >= 1 - margin) {
+      bounceVelocity.value.y *= -1
+      bouncePosition.value.y = Math.max(margin, Math.min(1 - margin, bouncePosition.value.y))
+    }
+
+    position = bouncePosition.value
+  } else {
+    position = calculatePosition(settings.value.pattern, easedProgress, movementDirection.value)
+  }
+
+  // Check if movement cycle complete (skip for bounce pattern)
+  if (movementProgress.value >= 1 && settings.value.pattern !== 'bounce') {
     // Play audio and haptic at end of movement
     const panValue = getPanValue(settings.value.pattern, position)
     if (settings.value.audioEnabled) {

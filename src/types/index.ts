@@ -1,4 +1,4 @@
-export type MovementPattern = 'horizontal' | 'vertical' | 'circular' | 'figure8'
+export type MovementPattern = 'horizontal' | 'vertical' | 'circular' | 'figure8' | 'bounce'
 export type SoundType = 'sine' | 'triangle' | 'sawtooth'
 
 export interface Settings {

@@ -42,6 +42,13 @@ export function useMovementPattern() {
         }
       }
 
+      case 'bounce': {
+        // Bouncing pattern (like DVD screensaver)
+        // Uses progress to determine position in bounce cycle
+        // This will be handled specially in SessionView with velocity tracking
+        return { x: 0.5, y: 0.5 }
+      }
+
       default:
         return { x: 0.5, y: 0.5 }
     }

@@ -1,17 +1,35 @@
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, type Ref } from 'vue'
 
-export function useKeyboardShortcuts(handlers: {
+export interface ShortcutHandlers {
   onSpace?: () => void
   onEscape?: () => void
   onPlusOrEqual?: () => void
   onMinus?: () => void
   onBracketLeft?: () => void
   onBracketRight?: () => void
-}) {
+}
+
+export function useKeyboardShortcuts(
+  handlers: ShortcutHandlers,
+  options?: {
+    enabled?: Ref<boolean> | (() => boolean)
+  }
+) {
+  const isEnabled = () => {
+    if (!options?.enabled) return true
+    return typeof options.enabled === 'function'
+      ? options.enabled()
+      : options.enabled.value
+  }
+
   const handleKeydown = (event: KeyboardEvent) => {
     // Don't trigger if typing in an input
     if (event.target instanceof HTMLInputElement ||
         event.target instanceof HTMLTextAreaElement) {
+      return
+    }
+
+    if (!isEnabled()) {
       return
     }
 

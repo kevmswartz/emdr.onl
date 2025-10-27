@@ -177,6 +177,7 @@ const patternLabel = (pattern: string) => {
     vertical: '↕ Vertical',
     circular: '⭕ Circular',
     figure8: '∞ Figure-8',
+    bounce: '📺 Bounce (DVD)',
   }
   return labels[pattern as keyof typeof labels] || pattern
 }

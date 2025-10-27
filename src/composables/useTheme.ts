@@ -1,4 +1,4 @@
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 
 export function useTheme() {
   const isDarkMode = ref(false)
@@ -20,23 +20,25 @@ export function useTheme() {
     prefersReducedMotion.value = reducedMotionQuery.matches
   }
 
+  let darkModeQuery: MediaQueryList | null = null
+  let reducedMotionQuery: MediaQueryList | null = null
+
   onMounted(() => {
     // Initial check
     updateTheme()
     updateReducedMotion()
 
     // Listen for changes
-    const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
 
     darkModeQuery.addEventListener('change', updateTheme)
     reducedMotionQuery.addEventListener('change', updateReducedMotion)
+  })
 
-    // Cleanup
-    return () => {
-      darkModeQuery.removeEventListener('change', updateTheme)
-      reducedMotionQuery.removeEventListener('change', updateReducedMotion)
-    }
+  onUnmounted(() => {
+    darkModeQuery?.removeEventListener('change', updateTheme)
+    reducedMotionQuery?.removeEventListener('change', updateReducedMotion)
   })
 
   return {

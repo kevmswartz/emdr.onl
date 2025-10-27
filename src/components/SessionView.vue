@@ -125,34 +125,47 @@ const { calculatePosition, getPanValue } = useMovementPattern()
 const { vibrate } = useHaptics()
 
 // Keyboard shortcuts
-useKeyboardShortcuts({
-  onSpace: () => !isCountdown.value && togglePause(),
-  onEscape: () => !isCountdown.value && stopSession(),
-  onPlusOrEqual: () => {
-    if (!isCountdown.value && settings.value.speed < 10) {
-      settings.value.speed++
-      emit('showToast', `Speed: ${settings.value.speed}`)
+const shortcutsEnabled = computed(() => settings.value.keyboardShortcuts && !isCountdown.value)
+
+useKeyboardShortcuts(
+  {
+    onSpace: () => {
+      if (!isCountdown.value) {
+        togglePause()
+      }
+    },
+    onEscape: () => {
+      if (!isCountdown.value) {
+        stopSession()
+      }
+    },
+    onPlusOrEqual: () => {
+      if (!isCountdown.value && settings.value.speed < 10) {
+        settings.value.speed++
+        emit('showToast', `Speed: ${settings.value.speed}`)
+      }
+    },
+    onMinus: () => {
+      if (!isCountdown.value && settings.value.speed > 1) {
+        settings.value.speed--
+        emit('showToast', `Speed: ${settings.value.speed}`)
+      }
+    },
+    onBracketLeft: () => {
+      if (!isCountdown.value && settings.value.volume > 0) {
+        settings.value.volume = Math.max(0, settings.value.volume - 0.1)
+        emit('showToast', `Volume: ${Math.round(settings.value.volume * 100)}%`)
+      }
+    },
+    onBracketRight: () => {
+      if (!isCountdown.value && settings.value.volume < 1) {
+        settings.value.volume = Math.min(1, settings.value.volume + 0.1)
+        emit('showToast', `Volume: ${Math.round(settings.value.volume * 100)}%`)
+      }
     }
   },
-  onMinus: () => {
-    if (!isCountdown.value && settings.value.speed > 1) {
-      settings.value.speed--
-      emit('showToast', `Speed: ${settings.value.speed}`)
-    }
-  },
-  onBracketLeft: () => {
-    if (!isCountdown.value && settings.value.volume > 0) {
-      settings.value.volume = Math.max(0, settings.value.volume - 0.1)
-      emit('showToast', `Volume: ${Math.round(settings.value.volume * 100)}%`)
-    }
-  },
-  onBracketRight: () => {
-    if (!isCountdown.value && settings.value.volume < 1) {
-      settings.value.volume = Math.min(1, settings.value.volume + 0.1)
-      emit('showToast', `Volume: ${Math.round(settings.value.volume * 100)}%`)
-    }
-  }
-})
+  { enabled: shortcutsEnabled }
+)
 
 // Timer calculations
 const timeRemaining = computed(() => {
@@ -332,52 +345,6 @@ const stopSession = () => {
   emit('endSession')
 }
 
-const adjustSpeed = (delta: number) => {
-  if (!settings.value.keyboardShortcuts) return
-  settings.value.speed = Math.max(1, Math.min(10, settings.value.speed + delta))
-  emit('showToast', `Speed: ${settings.value.speed}`)
-}
-
-const adjustVolume = (delta: number) => {
-  if (!settings.value.keyboardShortcuts) return
-  settings.value.volume = Math.max(0, Math.min(1, settings.value.volume + delta))
-  emit('showToast', `Volume: ${Math.round(settings.value.volume * 100)}%`)
-}
-
-// Keyboard shortcuts
-const handleKeydown = (e: KeyboardEvent) => {
-  if (!settings.value.keyboardShortcuts || isCountdown.value) return
-
-  switch (e.key) {
-    case ' ':
-      e.preventDefault()
-      togglePause()
-      break
-    case 'Escape':
-      e.preventDefault()
-      stopSession()
-      break
-    case '+':
-    case '=':
-      e.preventDefault()
-      adjustSpeed(1)
-      break
-    case '-':
-    case '_':
-      e.preventDefault()
-      adjustSpeed(-1)
-      break
-    case '[':
-      e.preventDefault()
-      adjustVolume(-0.1)
-      break
-    case ']':
-      e.preventDefault()
-      adjustVolume(0.1)
-      break
-  }
-}
-
 onMounted(() => {
   // Request fullscreen
   if (containerRef.value?.requestFullscreen) {
@@ -389,9 +356,6 @@ onMounted(() => {
   // Acquire wake lock
   acquireWakeLock()
 
-  // Add keyboard listener
-  window.addEventListener('keydown', handleKeydown)
-
   // Start countdown
   startCountdown()
 })
@@ -401,6 +365,5 @@ onUnmounted(() => {
     cancelAnimationFrame(animationFrameId.value)
   }
   releaseWakeLock()
-  window.removeEventListener('keydown', handleKeydown)
 })
 </script>

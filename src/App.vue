@@ -369,6 +369,13 @@ const saveSettings = () => {
   localStorage.setItem('emdr-settings', JSON.stringify(settings.value))
 }
 
+// Debounced save for performance (300ms delay)
+let saveTimeout: ReturnType<typeof setTimeout> | null = null
+const debouncedSaveSettings = () => {
+  if (saveTimeout) clearTimeout(saveTimeout)
+  saveTimeout = setTimeout(saveSettings, 300)
+}
+
 onMounted(async () => {
   // Load settings
   const stored = localStorage.getItem('emdr-settings')
@@ -384,5 +391,6 @@ onMounted(async () => {
   await loadSessions()
 })
 
-watch(settings, saveSettings, { deep: true })
+// Debounced settings save to avoid excessive localStorage writes
+watch(settings, debouncedSaveSettings, { deep: true })
 </script>

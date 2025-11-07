@@ -83,7 +83,7 @@
       <!-- Canvas -->
       <canvas
         ref="canvasRef"
-        class="absolute inset-0 w-full h-full"
+        class="absolute inset-0 w-full h-full will-change-contents"
         :aria-label="`Bilateral stimulation animation showing ${settings.pattern} movement pattern`"
         role="img"
       />

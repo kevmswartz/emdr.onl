@@ -4,6 +4,7 @@ import type { SoundType } from '../types'
 export function useAudio(volume: Ref<number>, frequency: Ref<number>, soundType: Ref<SoundType>) {
   const audioContext = ref<AudioContext | null>(null)
   const gainNode = ref<GainNode | null>(null)
+  const error = ref<string | null>(null)
 
   const initAudio = () => {
     if (!audioContext.value) {
@@ -11,15 +12,21 @@ export function useAudio(volume: Ref<number>, frequency: Ref<number>, soundType:
         audioContext.value = new (window.AudioContext || (window as any).webkitAudioContext)()
         gainNode.value = audioContext.value.createGain()
         gainNode.value.connect(audioContext.value.destination)
+        error.value = null
       } catch (e) {
+        const message = 'Audio not available. Session will continue with visual-only mode.'
         console.error('Web Audio API not supported:', e)
+        error.value = message
         return false
       }
     }
 
     // Resume context if suspended (browser autoplay policy)
     if (audioContext.value.state === 'suspended') {
-      audioContext.value.resume()
+      audioContext.value.resume().catch((err) => {
+        console.error('Failed to resume audio context:', err)
+        error.value = 'Audio blocked by browser. Click to enable sound.'
+      })
     }
 
     // Update volume
@@ -57,5 +64,6 @@ export function useAudio(volume: Ref<number>, frequency: Ref<number>, soundType:
   return {
     initAudio,
     playSound,
+    error,
   }
 }

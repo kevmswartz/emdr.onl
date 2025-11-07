@@ -35,9 +35,11 @@ const openDB = (): Promise<IDBDatabase> => {
 export function useSessionStorage() {
   const sessions = ref<Session[]>([])
   const isLoading = ref(false)
+  const error = ref<string | null>(null)
 
   const loadSessions = async () => {
     isLoading.value = true
+    error.value = null
     try {
       const db = await openDB()
       const transaction = db.transaction(STORE_NAME, 'readonly')
@@ -51,14 +53,18 @@ export function useSessionStorage() {
         }
         request.onerror = () => reject(request.error)
       })
-    } catch (error) {
-      console.error('Failed to load sessions:', error)
+    } catch (err) {
+      const message = 'Failed to load sessions. Your data is safe, but we couldn\'t access it right now.'
+      console.error('Failed to load sessions:', err)
+      error.value = message
+      throw new Error(message)
     } finally {
       isLoading.value = false
     }
   }
 
   const saveSession = async (session: Session) => {
+    error.value = null
     try {
       const db = await openDB()
       const transaction = db.transaction(STORE_NAME, 'readwrite')
@@ -69,13 +75,16 @@ export function useSessionStorage() {
         request.onerror = () => reject(request.error)
       })
       await loadSessions()
-    } catch (error) {
-      console.error('Failed to save session:', error)
-      throw error
+    } catch (err) {
+      const message = 'Failed to save session. Please try exporting your data as a backup.'
+      console.error('Failed to save session:', err)
+      error.value = message
+      throw new Error(message)
     }
   }
 
   const deleteSession = async (id: string) => {
+    error.value = null
     try {
       const db = await openDB()
       const transaction = db.transaction(STORE_NAME, 'readwrite')
@@ -86,13 +95,16 @@ export function useSessionStorage() {
         request.onerror = () => reject(request.error)
       })
       await loadSessions()
-    } catch (error) {
-      console.error('Failed to delete session:', error)
-      throw error
+    } catch (err) {
+      const message = 'Failed to delete session. Please try again.'
+      console.error('Failed to delete session:', err)
+      error.value = message
+      throw new Error(message)
     }
   }
 
   const clearAllSessions = async () => {
+    error.value = null
     try {
       const db = await openDB()
       const transaction = db.transaction(STORE_NAME, 'readwrite')
@@ -103,9 +115,11 @@ export function useSessionStorage() {
         request.onerror = () => reject(request.error)
       })
       sessions.value = []
-    } catch (error) {
-      console.error('Failed to clear sessions:', error)
-      throw error
+    } catch (err) {
+      const message = 'Failed to clear sessions. Please try again.'
+      console.error('Failed to clear sessions:', err)
+      error.value = message
+      throw new Error(message)
     }
   }
 
@@ -168,6 +182,7 @@ export function useSessionStorage() {
   return {
     sessions,
     isLoading,
+    error,
     statistics,
     loadSessions,
     saveSession,

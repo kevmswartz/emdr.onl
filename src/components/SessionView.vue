@@ -3,11 +3,34 @@
     ref="containerRef"
     class="fixed inset-0 z-50 flex flex-col items-center justify-center"
     :style="{ backgroundColor: settings.backgroundColor }"
+    role="application"
+    aria-label="EMDR bilateral stimulation session"
   >
+    <!-- Screen Reader Announcements -->
+    <div
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      class="sr-only"
+    >
+      {{ srAnnouncement }}
+    </div>
+
+    <!-- Timer Updates (throttled) -->
+    <div
+      role="timer"
+      aria-live="off"
+      aria-atomic="true"
+      class="sr-only"
+    >
+      {{ srTimerUpdate }}
+    </div>
+
     <!-- Countdown -->
     <div
       v-if="isCountdown"
       class="text-white text-8xl font-bold animate-pulse"
+      aria-label="Session starting countdown"
     >
       {{ countdown }}
     </div>
@@ -15,10 +38,16 @@
     <!-- Session Active -->
     <template v-else>
       <!-- Timer Display -->
-      <div class="absolute top-8 right-8">
+      <div
+        class="absolute top-8 right-8"
+        aria-label="Session timer"
+      >
         <div class="relative w-20 h-20">
           <!-- Progress Circle -->
-          <svg class="w-full h-full -rotate-90">
+          <svg
+            class="w-full h-full -rotate-90"
+            aria-hidden="true"
+          >
             <circle
               cx="40"
               cy="40"
@@ -41,7 +70,12 @@
           </svg>
           <!-- Time Text -->
           <div class="absolute inset-0 flex items-center justify-center">
-            <span class="text-white text-lg font-semibold">{{ timeRemaining }}</span>
+            <span
+              class="text-white text-lg font-semibold"
+              aria-label="`Time remaining: ${timeRemaining}`"
+            >
+              {{ timeRemaining }}
+            </span>
           </div>
         </div>
       </div>
@@ -49,23 +83,32 @@
       <!-- Canvas -->
       <canvas
         ref="canvasRef"
-        class="absolute inset-0 w-full h-full"
+        class="absolute inset-0 w-full h-full will-change-contents"
+        :aria-label="`Bilateral stimulation animation showing ${settings.pattern} movement pattern`"
+        role="img"
       />
 
       <!-- Controls -->
-      <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-4">
+      <div
+        class="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-4"
+        role="group"
+        aria-label="Session controls"
+      >
         <button
           @click="togglePause"
-          class="touch-target w-14 h-14 bg-white/20 hover:bg-white/30 backdrop-blur rounded-full flex items-center justify-center text-white transition-colors"
+          class="touch-target w-14 h-14 bg-white/20 hover:bg-white/30 focus:ring-4 focus:ring-white/50 backdrop-blur rounded-full flex items-center justify-center text-white transition-colors"
+          :aria-label="isPaused ? 'Resume session' : 'Pause session'"
+          :aria-pressed="isPaused"
         >
-          <span v-if="isPaused" class="text-2xl">▶</span>
-          <span v-else class="text-2xl">⏸</span>
+          <span v-if="isPaused" class="text-2xl" aria-hidden="true">▶</span>
+          <span v-else class="text-2xl" aria-hidden="true">⏸</span>
         </button>
         <button
           @click="stopSession"
-          class="touch-target w-14 h-14 bg-red-500/80 hover:bg-red-500 backdrop-blur rounded-full flex items-center justify-center text-white transition-colors"
+          class="touch-target w-14 h-14 bg-red-500/80 hover:bg-red-500 focus:ring-4 focus:ring-red-300 backdrop-blur rounded-full flex items-center justify-center text-white transition-colors"
+          aria-label="Stop session and return home"
         >
-          <span class="text-2xl">■</span>
+          <span class="text-2xl" aria-hidden="true">■</span>
         </button>
       </div>
     </template>
@@ -113,6 +156,11 @@ const bounceVelocity = ref({
   x: (Math.random() - 0.5) * 0.003,
   y: (Math.random() - 0.5) * 0.003
 })
+
+// Screen reader announcements
+const srAnnouncement = ref('')
+const srTimerUpdate = ref('')
+let lastTimerAnnouncement = 0
 
 // Composables
 const { initAudio, playSound } = useAudio(
@@ -195,8 +243,16 @@ const animate = (currentTime: number) => {
 
   elapsedTime.value = currentTime - startTime.value
 
+  // Announce time remaining every 30 seconds (throttled for screen readers)
+  const secondsRemaining = timeRemaining.value
+  if (secondsRemaining > 0 && secondsRemaining % 30 === 0 && secondsRemaining !== lastTimerAnnouncement) {
+    srTimerUpdate.value = `${secondsRemaining} seconds remaining`
+    lastTimerAnnouncement = secondsRemaining
+  }
+
   // Check if session complete
   if (elapsedTime.value >= settings.value.duration * 1000) {
+    srAnnouncement.value = 'Session complete'
     stopSession()
     return
   }
@@ -295,14 +351,20 @@ const animate = (currentTime: number) => {
 
 // Start countdown
 const startCountdown = () => {
+  srAnnouncement.value = 'Session starting in 3 seconds'
+
   const interval = setInterval(() => {
     countdown.value--
     if (settings.value.hapticFeedback) {
       vibrate(50)
     }
+    if (countdown.value > 0) {
+      srAnnouncement.value = `Starting in ${countdown.value}`
+    }
     if (countdown.value === 0) {
       clearInterval(interval)
       isCountdown.value = false
+      srAnnouncement.value = `Session started. ${settings.value.pattern} pattern for ${settings.value.duration} seconds.`
 
       // Initialize audio
       initAudio()
@@ -324,12 +386,14 @@ const togglePause = () => {
     startTime.value += pauseDuration
     movementStartTime.value += pauseDuration
     animationFrameId.value = requestAnimationFrame(animate)
+    srAnnouncement.value = 'Session resumed'
     emit('showToast', 'Resumed')
   } else {
     // Pause
     if (animationFrameId.value) {
       cancelAnimationFrame(animationFrameId.value)
     }
+    srAnnouncement.value = `Session paused. ${timeRemaining.value} seconds remaining.`
     emit('showToast', 'Paused')
   }
 }
@@ -338,6 +402,7 @@ const stopSession = () => {
   if (animationFrameId.value) {
     cancelAnimationFrame(animationFrameId.value)
   }
+  srAnnouncement.value = 'Session ended'
   releaseWakeLock()
   if (document.fullscreenElement) {
     document.exitFullscreen()

@@ -273,13 +273,22 @@ const animate = (currentTime: number) => {
   // Calculate movement progress
   const movementElapsed = currentTime - movementStartTime.value
   const movementDuration = getMovementDuration()
-  movementProgress.value = Math.min(movementElapsed / movementDuration, 1)
+
+  // For circular pattern, don't clamp - let it continue indefinitely
+  if (settings.value.pattern === 'circular') {
+    movementProgress.value = movementElapsed / movementDuration
+  } else {
+    movementProgress.value = Math.min(movementElapsed / movementDuration, 1)
+  }
 
   // Ease in-out quad
   const easeInOutQuad = (t: number) =>
     t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
 
-  const easedProgress = easeInOutQuad(movementProgress.value)
+  // For circular, use modulo to loop progress, for others use standard easing
+  const easedProgress = settings.value.pattern === 'circular'
+    ? movementProgress.value % 1
+    : easeInOutQuad(movementProgress.value)
 
   // Get position from pattern
   let position
@@ -329,20 +338,23 @@ const animate = (currentTime: number) => {
     movementProgress.value = 0
   }
 
-  // For circular pattern, just restart the cycle without reversing
-  if (movementProgress.value >= 1 && settings.value.pattern === 'circular') {
-    // Play audio and haptic at end of movement
-    const panValue = getPanValue(settings.value.pattern, position)
-    if (settings.value.audioEnabled) {
-      playSound(panValue)
-    }
-    if (settings.value.hapticFeedback) {
-      vibrate(30)
-    }
+  // For circular pattern, play sound/haptic at intervals (every 90 degrees) for continuous feedback
+  if (settings.value.pattern === 'circular') {
+    // Use modulo for continuous looping
+    const normalizedProgress = movementProgress.value % 1
+    const quarter = Math.floor(normalizedProgress * 4)
+    const prevProgress = Math.max(0, normalizedProgress - 0.02)
+    const prevQuarter = Math.floor(prevProgress * 4)
 
-    // Restart without reversing
-    movementStartTime.value = currentTime
-    movementProgress.value = 0
+    if (quarter > prevQuarter) {
+      const panValue = getPanValue(settings.value.pattern, position)
+      if (settings.value.audioEnabled) {
+        playSound(panValue)
+      }
+      if (settings.value.hapticFeedback) {
+        vibrate(20)
+      }
+    }
   }
 
   // Draw dot

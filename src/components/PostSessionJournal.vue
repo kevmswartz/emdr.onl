@@ -1,32 +1,32 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+  <div class="min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-900">
     <div class="w-full max-w-2xl">
-      <div class="bg-white rounded-2xl shadow-sm p-8 space-y-6">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-8 space-y-6">
         <div class="text-center">
-          <h2 class="text-2xl font-bold text-gray-900 mb-2">Post-Session Check-In</h2>
-          <p class="text-gray-600">How are you feeling now?</p>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Post-Session Check-In</h2>
+          <p class="text-gray-600 dark:text-gray-400">How are you feeling now?</p>
         </div>
 
         <!-- Distress Change Summary -->
         <div
           v-if="initialJournal?.initialDistress !== undefined"
-          class="bg-blue-50 border border-blue-200 rounded-lg p-4"
+          class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4"
         >
           <div class="flex items-center justify-between">
             <div>
-              <div class="text-sm text-gray-600">Initial Distress</div>
-              <div class="text-2xl font-bold text-gray-900">{{ initialJournal.initialDistress }}</div>
+              <div class="text-sm text-gray-600 dark:text-gray-400">Initial Distress</div>
+              <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ initialJournal.initialDistress }}</div>
             </div>
-            <div class="text-2xl">→</div>
+            <div class="text-2xl dark:text-gray-400">→</div>
             <div>
-              <div class="text-sm text-gray-600">Current Distress</div>
-              <div class="text-2xl font-bold text-gray-900">{{ journal.currentDistress }}</div>
+              <div class="text-sm text-gray-600 dark:text-gray-400">Current Distress</div>
+              <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ journal.currentDistress }}</div>
             </div>
             <div>
-              <div class="text-sm text-gray-600">Change</div>
+              <div class="text-sm text-gray-600 dark:text-gray-400">Change</div>
               <div
                 class="text-2xl font-bold"
-                :class="distressChange > 0 ? 'text-green-600' : distressChange < 0 ? 'text-red-600' : 'text-gray-600'"
+                :class="distressChange > 0 ? 'text-green-600 dark:text-green-500' : distressChange < 0 ? 'text-red-600 dark:text-red-500' : 'text-gray-600 dark:text-gray-400'"
               >
                 {{ distressChange > 0 ? '-' : distressChange < 0 ? '+' : '' }}{{ Math.abs(distressChange) }}
               </div>
@@ -37,25 +37,25 @@
         <div class="space-y-4">
           <!-- What Came Up -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               What Came Up?
-              <span class="text-gray-400 text-xs ml-1">(optional)</span>
+              <span class="text-gray-400 dark:text-gray-500 text-xs ml-1">(optional)</span>
             </label>
             <textarea
               v-model="journal.whatCameUp"
               rows="4"
               maxlength="500"
               placeholder="Any thoughts, feelings, images, or insights that emerged during the session?"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             />
-            <div class="text-xs text-gray-400 text-right mt-1">
+            <div class="text-xs text-gray-400 dark:text-gray-500 text-right mt-1">
               {{ journal.whatCameUp?.length || 0 }}/500
             </div>
           </div>
 
           <!-- Current Distress -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Current Distress Level: {{ journal.currentDistress }}
             </label>
             <div class="flex items-center gap-4">
@@ -69,7 +69,7 @@
               />
               <span class="text-2xl">😰</span>
             </div>
-            <div class="flex justify-between text-xs text-gray-500 mt-1">
+            <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
               <span>No distress</span>
               <span>Maximum distress</span>
             </div>
@@ -77,18 +77,18 @@
 
           <!-- Notes -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Additional Notes
-              <span class="text-gray-400 text-xs ml-1">(optional)</span>
+              <span class="text-gray-400 dark:text-gray-500 text-xs ml-1">(optional)</span>
             </label>
             <textarea
               v-model="journal.notes"
               rows="3"
               maxlength="500"
               placeholder="Any other observations or reflections..."
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             />
-            <div class="text-xs text-gray-400 text-right mt-1">
+            <div class="text-xs text-gray-400 dark:text-gray-500 text-right mt-1">
               {{ journal.notes?.length || 0 }}/500
             </div>
           </div>
@@ -97,7 +97,7 @@
         <div class="flex gap-4 pt-4">
           <button
             @click="$emit('skip')"
-            class="flex-1 px-6 py-3 border border-gray-300 rounded-xl font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            class="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-xl font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             Skip & Finish
           </button>

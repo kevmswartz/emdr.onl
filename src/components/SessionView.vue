@@ -285,7 +285,7 @@ const animate = (currentTime: number) => {
   let position
   if (settings.value.pattern === 'bounce') {
     // Update bounce position with physics
-    const speed = settings.value.speed * 0.001 // Speed multiplier
+    const speed = settings.value.speed * 0.01 // Speed multiplier (increased 10x)
     bouncePosition.value.x += bounceVelocity.value.x * speed
     bouncePosition.value.y += bounceVelocity.value.y * speed
 

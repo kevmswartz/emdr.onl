@@ -153,8 +153,8 @@ const movementDirection = ref(1) // 1 or -1
 // Bounce pattern state
 const bouncePosition = ref({ x: 0.5, y: 0.5 })
 const bounceVelocity = ref({
-  x: (Math.random() - 0.5) * 0.003,
-  y: (Math.random() - 0.5) * 0.003
+  x: (Math.random() - 0.5) * 2,
+  y: (Math.random() - 0.5) * 2
 })
 
 // Screen reader announcements
@@ -285,9 +285,9 @@ const animate = (currentTime: number) => {
   let position
   if (settings.value.pattern === 'bounce') {
     // Update bounce position with physics
-    const speed = settings.value.speed * 0.0005 // Speed multiplier
-    bouncePosition.value.x += bounceVelocity.value.x * speed * 60
-    bouncePosition.value.y += bounceVelocity.value.y * speed * 60
+    const speed = settings.value.speed * 0.001 // Speed multiplier
+    bouncePosition.value.x += bounceVelocity.value.x * speed
+    bouncePosition.value.y += bounceVelocity.value.y * speed
 
     // Bounce off edges
     const margin = 0.05 // Keep away from edges
@@ -312,8 +312,8 @@ const animate = (currentTime: number) => {
     position = calculatePosition(settings.value.pattern, easedProgress, movementDirection.value)
   }
 
-  // Check if movement cycle complete (skip for bounce pattern)
-  if (movementProgress.value >= 1 && settings.value.pattern !== 'bounce') {
+  // Check if movement cycle complete (skip for bounce and circular patterns)
+  if (movementProgress.value >= 1 && settings.value.pattern !== 'bounce' && settings.value.pattern !== 'circular') {
     // Play audio and haptic at end of movement
     const panValue = getPanValue(settings.value.pattern, position)
     if (settings.value.audioEnabled) {
@@ -325,6 +325,22 @@ const animate = (currentTime: number) => {
 
     // Reverse direction and restart
     movementDirection.value *= -1
+    movementStartTime.value = currentTime
+    movementProgress.value = 0
+  }
+
+  // For circular pattern, just restart the cycle without reversing
+  if (movementProgress.value >= 1 && settings.value.pattern === 'circular') {
+    // Play audio and haptic at end of movement
+    const panValue = getPanValue(settings.value.pattern, position)
+    if (settings.value.audioEnabled) {
+      playSound(panValue)
+    }
+    if (settings.value.hapticFeedback) {
+      vibrate(30)
+    }
+
+    // Restart without reversing
     movementStartTime.value = currentTime
     movementProgress.value = 0
   }

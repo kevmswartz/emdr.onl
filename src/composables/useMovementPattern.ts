@@ -34,8 +34,8 @@ export function useMovementPattern() {
       }
 
       case 'figure8': {
-        // Lissajous curve (figure-8)
-        const angle = progress * Math.PI * 2
+        // Lissajous curve (figure-8) - slower, half pattern per cycle
+        const angle = progress * Math.PI
         return {
           x: 0.5 + Math.sin(angle) * 0.35,
           y: 0.5 + Math.sin(angle * 2) * 0.35 * direction,

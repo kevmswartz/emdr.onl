@@ -13,6 +13,7 @@ export default defineConfig({
     globals: true,
     environment: 'happy-dom',
     setupFiles: ['./src/tests/setup.ts'],
+    pool: 'threads', // Use threads instead of forks (better for WSL)
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

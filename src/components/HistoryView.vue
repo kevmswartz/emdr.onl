@@ -8,7 +8,7 @@
           <p class="text-gray-600 dark:text-gray-400 mt-1">Track your progress over time</p>
         </div>
         <button
-          @click="$emit('back')"
+          @click="$router.push('/')"
           class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-white dark:hover:bg-gray-800 dark:text-white transition-colors"
         >
           ← Back

@@ -33,6 +33,7 @@
   - [Browser APIs](#browser-apis)
   - [Data Storage](#data-storage)
   - [PWA Support](#pwa-support)
+- [Code Quality & Technical Debt](#code-quality--technical-debt)
 - [Privacy & Security](#privacy--security)
 - [Contributing](#contributing)
 - [Roadmap](#roadmap)
@@ -405,6 +406,57 @@ SoundType         // 'sine' | 'triangle' | 'sawtooth'
 - ✅ Valid manifest with icons
 - ✅ Registered service worker
 - ✅ Start URL loads while offline
+
+---
+
+## Code Quality & Technical Debt
+
+**Overall Quality Rating: 7/10** • [Full Review](./claude-review.md)
+
+### Current Status
+
+This codebase represents a **production-ready MVP** with clean architecture and solid TypeScript discipline. However, there are important gaps to address before scaling to advanced features.
+
+### Key Strengths ✅
+
+- **Privacy-first architecture:** Zero external requests, local-only storage
+- **Clean composable patterns:** Single-responsibility browser API wrappers
+- **Strong TypeScript:** Strict mode with comprehensive type definitions
+- **Accessibility foundations:** ARIA labels, keyboard shortcuts, theme detection
+- **Excellent documentation:** Comprehensive README and developer guides
+
+### Known Issues ⚠️
+
+1. **Minimal test coverage** (~10%) - Critical flows untested
+2. **Documentation mismatch** - CLAUDE.md claims state-based nav but uses Vue Router
+3. **IndexedDB singleton** - Multi-tab conflicts possible
+4. **SessionView complexity** - 490 lines, needs decomposition
+5. **Reduced motion not implemented** - Accessibility gap despite promise
+6. **No CI/CD pipeline** - No automated quality checks on PRs
+
+### Important Gotchas for New Contributors
+
+- **Router architecture:** Despite docs saying "no Vue Router", we DO use it (see `router/index.ts`)
+- **Provide/inject heavy:** 13 injections from App.vue - track dependencies carefully
+- **Prop mutation in SessionView:** Keyboard shortcuts mutate parent props (needs refactor)
+- **Canvas-only bounce:** Bounce pattern physics live in SessionView, not composable
+- **Multi-tab caution:** Opening app in multiple tabs may cause session save conflicts
+
+### Review Summary
+
+See **[claude-review.md](./claude-review.md)** for:
+- Detailed architecture analysis (8 categories)
+- 60+ specific findings with file/line references
+- Prioritized action plan (1-day, 1-week, long-term fixes)
+- Testing strategy recommendations
+- Security audit notes
+
+**Next steps before Phase 4:**
+- Add integration tests for session save flow
+- Fix Vue Router documentation mismatch
+- Remove IndexedDB singleton pattern
+- Implement reduced motion accessibility
+- Add CI/CD pipeline with type-check + test gates
 
 ---
 

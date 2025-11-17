@@ -87,13 +87,13 @@
 
         <div class="flex gap-4 pt-4">
           <button
-            @click="$emit('skip')"
+            @click="handleSkip"
             class="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-xl font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             Skip Journal
           </button>
           <button
-            @click="$emit('continue', journal)"
+            @click="handleContinue"
             class="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors"
           >
             Continue to Session
@@ -105,13 +105,12 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { reactive, inject } from 'vue'
 import type { JournalEntry } from '../types'
 
-defineEmits<{
-  continue: [journal: JournalEntry]
-  skip: []
-}>()
+// Inject handlers from App.vue
+const handlePreJournalContinue = inject<(journal: JournalEntry) => void>('handlePreJournalContinue')!
+const startBLSSession = inject<() => void>('startBLSSession')!
 
 const journal = reactive<JournalEntry>({
   targetMemory: '',
@@ -119,4 +118,12 @@ const journal = reactive<JournalEntry>({
   bodySensations: '',
   initialDistress: 5,
 })
+
+const handleContinue = () => {
+  handlePreJournalContinue(journal)
+}
+
+const handleSkip = () => {
+  startBLSSession()
+}
 </script>

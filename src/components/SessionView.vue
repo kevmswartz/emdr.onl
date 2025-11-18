@@ -116,7 +116,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, toRefs } from 'vue'
+import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
+import type { Ref } from 'vue'
 import type { Settings } from '../types'
 import { useAudio } from '../composables/useAudio'
 import { useWakeLock } from '../composables/useWakeLock'
@@ -124,16 +125,10 @@ import { useMovementPattern } from '../composables/useMovementPattern'
 import { useHaptics } from '../composables/useHaptics'
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts'
 
-const props = defineProps<{
-  settings: Settings
-}>()
-
-const emit = defineEmits<{
-  endSession: []
-  showToast: [message: string]
-}>()
-
-const { settings } = toRefs(props)
+// Inject settings and handlers from App.vue
+const settings = inject<Ref<Settings>>('settings')!
+const handleSessionEnd = inject<() => void>('handleSessionEnd')!
+const showToast = inject<(message: string) => void>('showToast')!
 const containerRef = ref<HTMLElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
@@ -190,25 +185,25 @@ useKeyboardShortcuts(
     onPlusOrEqual: () => {
       if (!isCountdown.value && settings.value.speed < 10) {
         settings.value.speed++
-        emit('showToast', `Speed: ${settings.value.speed}`)
+        showToast(`Speed: ${settings.value.speed}`)
       }
     },
     onMinus: () => {
       if (!isCountdown.value && settings.value.speed > 1) {
         settings.value.speed--
-        emit('showToast', `Speed: ${settings.value.speed}`)
+        showToast(`Speed: ${settings.value.speed}`)
       }
     },
     onBracketLeft: () => {
       if (!isCountdown.value && settings.value.volume > 0) {
         settings.value.volume = Math.max(0, settings.value.volume - 0.1)
-        emit('showToast', `Volume: ${Math.round(settings.value.volume * 100)}%`)
+        showToast(`Volume: ${Math.round(settings.value.volume * 100)}%`)
       }
     },
     onBracketRight: () => {
       if (!isCountdown.value && settings.value.volume < 1) {
         settings.value.volume = Math.min(1, settings.value.volume + 0.1)
-        emit('showToast', `Volume: ${Math.round(settings.value.volume * 100)}%`)
+        showToast(`Volume: ${Math.round(settings.value.volume * 100)}%`)
       }
     }
   },
@@ -415,14 +410,14 @@ const togglePause = () => {
     movementStartTime.value += pauseDuration
     animationFrameId.value = requestAnimationFrame(animate)
     srAnnouncement.value = 'Session resumed'
-    emit('showToast', 'Resumed')
+    showToast('Resumed')
   } else {
     // Pause
     if (animationFrameId.value) {
       cancelAnimationFrame(animationFrameId.value)
     }
     srAnnouncement.value = `Session paused. ${timeRemaining.value} seconds remaining.`
-    emit('showToast', 'Paused')
+    showToast('Paused')
   }
 }
 
@@ -435,7 +430,7 @@ const stopSession = () => {
   if (document.fullscreenElement) {
     document.exitFullscreen()
   }
-  emit('endSession')
+  handleSessionEnd()
 }
 
 onMounted(() => {

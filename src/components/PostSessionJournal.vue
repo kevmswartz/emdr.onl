@@ -9,13 +9,13 @@
 
         <!-- Distress Change Summary -->
         <div
-          v-if="initialJournal?.initialDistress !== undefined"
+          v-if="currentJournal?.initialDistress !== undefined"
           class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4"
         >
           <div class="flex items-center justify-between">
             <div>
               <div class="text-sm text-gray-600 dark:text-gray-400">Initial Distress</div>
-              <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ initialJournal.initialDistress }}</div>
+              <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ currentJournal.initialDistress }}</div>
             </div>
             <div class="text-2xl dark:text-gray-400">→</div>
             <div>
@@ -96,13 +96,13 @@
 
         <div class="flex gap-4 pt-4">
           <button
-            @click="$emit('skip')"
+            @click="handleSkip"
             class="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-xl font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             Skip & Finish
           </button>
           <button
-            @click="$emit('save', journal)"
+            @click="handleSave"
             class="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-colors"
           >
             💾 Save Session
@@ -114,26 +114,31 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed } from 'vue'
+import { reactive, computed, inject } from 'vue'
+import type { Ref } from 'vue'
 import type { JournalEntry } from '../types'
 
-const props = defineProps<{
-  initialJournal?: JournalEntry
-}>()
-
-defineEmits<{
-  save: [journal: JournalEntry]
-  skip: []
-}>()
+// Inject handlers and data from App.vue
+const currentJournal = inject<Ref<JournalEntry>>('currentJournal')!
+const handlePostJournalSave = inject<(journal: JournalEntry) => void>('handlePostJournalSave')!
+const finishSession = inject<() => void>('finishSession')!
 
 const journal = reactive<JournalEntry>({
   whatCameUp: '',
-  currentDistress: props.initialJournal?.initialDistress || 5,
+  currentDistress: currentJournal.value?.initialDistress || 5,
   notes: '',
 })
 
 const distressChange = computed(() => {
-  if (props.initialJournal?.initialDistress === undefined) return 0
-  return props.initialJournal.initialDistress - (journal.currentDistress || 0)
+  if (currentJournal.value?.initialDistress === undefined) return 0
+  return currentJournal.value.initialDistress - (journal.currentDistress || 0)
 })
+
+const handleSave = () => {
+  handlePostJournalSave(journal)
+}
+
+const handleSkip = () => {
+  finishSession()
+}
 </script>

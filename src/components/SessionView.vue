@@ -72,7 +72,7 @@
           <div class="absolute inset-0 flex items-center justify-center">
             <span
               class="text-white text-lg font-semibold"
-              aria-label="`Time remaining: ${timeRemaining}`"
+              :aria-label="`Time remaining: ${timeRemaining}`"
             >
               {{ timeRemaining }}
             </span>
@@ -131,6 +131,8 @@ const handleSessionEnd = inject<() => void>('handleSessionEnd')!
 const showToast = inject<(message: string) => void>('showToast')!
 const containerRef = ref<HTMLElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
+const canvasWidth = ref(0)
+const canvasHeight = ref(0)
 
 // Session state
 const isCountdown = ref(true)
@@ -139,6 +141,7 @@ const isPaused = ref(false)
 const elapsedTime = ref(0)
 const startTime = ref(0)
 const animationFrameId = ref<number | null>(null)
+const countdownIntervalId = ref<ReturnType<typeof setInterval> | null>(null)
 
 // Movement state
 const movementProgress = ref(0)
@@ -227,6 +230,15 @@ const getMovementDuration = () => {
   return 2500 - (settings.value.speed * 200)
 }
 
+// Resize canvas to match window size
+const resizeCanvas = () => {
+  if (!canvasRef.value) return
+  canvasWidth.value = window.innerWidth
+  canvasHeight.value = window.innerHeight
+  canvasRef.value.width = canvasWidth.value
+  canvasRef.value.height = canvasHeight.value
+}
+
 // Animation loop
 const animate = (currentTime: number) => {
   if (isPaused.value) return
@@ -258,12 +270,8 @@ const animate = (currentTime: number) => {
   const ctx = canvas.getContext('2d')
   if (!ctx) return
 
-  // Set canvas size
-  canvas.width = window.innerWidth
-  canvas.height = window.innerHeight
-
-  // Clear canvas
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  // Clear canvas (size is set by resize listener)
+  ctx.clearRect(0, 0, canvasWidth.value, canvasHeight.value)
 
   // Calculate movement progress
   const movementElapsed = currentTime - movementStartTime.value
@@ -354,8 +362,8 @@ const animate = (currentTime: number) => {
 
   // Draw dot
   const margin = 80
-  const x = position.x * (canvas.width - margin * 2) + margin
-  const y = position.y * (canvas.height - margin * 2) + margin
+  const x = position.x * (canvasWidth.value - margin * 2) + margin
+  const y = position.y * (canvasHeight.value - margin * 2) + margin
   const radius = settings.value.dotSize / 2
 
   // Gradient
@@ -376,7 +384,7 @@ const animate = (currentTime: number) => {
 const startCountdown = () => {
   srAnnouncement.value = 'Session starting in 3 seconds'
 
-  const interval = setInterval(() => {
+  countdownIntervalId.value = setInterval(() => {
     countdown.value--
     if (settings.value.hapticFeedback) {
       vibrate(50)
@@ -385,7 +393,10 @@ const startCountdown = () => {
       srAnnouncement.value = `Starting in ${countdown.value}`
     }
     if (countdown.value === 0) {
-      clearInterval(interval)
+      if (countdownIntervalId.value) {
+        clearInterval(countdownIntervalId.value)
+        countdownIntervalId.value = null
+      }
       isCountdown.value = false
       srAnnouncement.value = `Session started. ${settings.value.pattern} pattern for ${settings.value.duration} seconds.`
 
@@ -425,6 +436,10 @@ const stopSession = () => {
   if (animationFrameId.value) {
     cancelAnimationFrame(animationFrameId.value)
   }
+  if (countdownIntervalId.value) {
+    clearInterval(countdownIntervalId.value)
+    countdownIntervalId.value = null
+  }
   srAnnouncement.value = 'Session ended'
   releaseWakeLock()
   if (document.fullscreenElement) {
@@ -434,6 +449,13 @@ const stopSession = () => {
 }
 
 onMounted(() => {
+  // Set initial canvas size
+  resizeCanvas()
+
+  // Listen for window resize
+  window.addEventListener('resize', resizeCanvas)
+  window.addEventListener('orientationchange', resizeCanvas)
+
   // Request fullscreen
   if (containerRef.value?.requestFullscreen) {
     containerRef.value.requestFullscreen().catch((err) => {
@@ -452,6 +474,11 @@ onUnmounted(() => {
   if (animationFrameId.value) {
     cancelAnimationFrame(animationFrameId.value)
   }
+  if (countdownIntervalId.value) {
+    clearInterval(countdownIntervalId.value)
+  }
+  window.removeEventListener('resize', resizeCanvas)
+  window.removeEventListener('orientationchange', resizeCanvas)
   releaseWakeLock()
 })
 </script>

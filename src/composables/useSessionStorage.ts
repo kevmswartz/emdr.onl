@@ -153,34 +153,17 @@ export function useSessionStorage() {
     URL.revokeObjectURL(url)
   }
 
-  // Sanitize CSV cell to prevent formula injection
-  const sanitizeCSVCell = (cell: string): string => {
-    if (!cell) return cell
-    // If cell starts with formula characters, prefix with single quote to prevent execution
-    if (cell.match(/^[=+\-@]/)) {
-      return `'${cell}`
-    }
-    return cell
-  }
-
   const exportToCSV = () => {
     const headers = ['Timestamp', 'Duration (s)', 'Pattern', 'Initial Distress', 'Final Distress', 'Distress Reduction', 'Notes']
-    const rows = sessions.value.map(s => {
-      // Escape quotes and sanitize notes field
-      const notes = s.journal?.notes || ''
-      const escapedNotes = notes.replace(/"/g, '""')
-      const sanitizedNotes = sanitizeCSVCell(escapedNotes)
-
-      return [
-        new Date(s.timestamp).toISOString(),
-        s.duration.toString(),
-        s.settings.pattern,
-        s.journal?.initialDistress?.toString() || '',
-        s.journal?.currentDistress?.toString() || '',
-        s.distressReduction?.toString() || '',
-        sanitizedNotes,
-      ]
-    })
+    const rows = sessions.value.map(s => [
+      new Date(s.timestamp).toISOString(),
+      s.duration.toString(),
+      s.settings.pattern,
+      s.journal?.initialDistress?.toString() || '',
+      s.journal?.currentDistress?.toString() || '',
+      s.distressReduction?.toString() || '',
+      (s.journal?.notes || '').replace(/"/g, '""'),
+    ])
 
     const csvContent = [
       headers.join(','),

@@ -20,7 +20,7 @@
           Your feedback has been submitted successfully.
         </p>
         <button
-          @click="$router.push('/')"
+          @click="$emit('back')"
           class="text-green-600 dark:text-green-400 hover:underline font-medium"
         >
           ← Back to Home
@@ -30,7 +30,6 @@
       <!-- Form -->
       <form
         v-else
-        ref="formRef"
         name="feedback"
         method="POST"
         data-netlify="true"
@@ -40,11 +39,7 @@
       >
         <!-- Hidden fields for Netlify -->
         <input type="hidden" name="form-name" value="feedback" />
-        <!-- Honeypot field - visually hidden but readable by bots -->
-        <div style="position: absolute; left: -9999px;" aria-hidden="true">
-          <label for="bot-field">Don't fill this out if you're human:</label>
-          <input type="text" name="bot-field" id="bot-field" tabindex="-1" autocomplete="off" />
-        </div>
+        <input type="hidden" name="bot-field" />
 
         <!-- Feedback Type -->
         <div>
@@ -104,7 +99,7 @@
         <div class="flex gap-3 pt-2">
           <button
             type="button"
-            @click="$router.push('/')"
+            @click="$emit('back')"
             class="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-medium py-3 px-6 rounded-xl transition-colors"
           >
             Cancel
@@ -134,8 +129,6 @@ defineEmits<{
   back: []
 }>()
 
-const formRef = ref<HTMLFormElement | null>(null)
-
 const formData = ref({
   type: '',
   email: '',
@@ -147,22 +140,18 @@ const submitted = ref(false)
 
 const handleSubmit = async () => {
   if (!formData.value.type || !formData.value.message) return
-  if (!formRef.value) return
 
   isSubmitting.value = true
 
   try {
-    const data = new FormData(formRef.value)
+    const formElement = document.querySelector('form[name="feedback"]') as HTMLFormElement
+    const data = new FormData(formElement)
 
-    const response = await fetch('/', {
+    await fetch('/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams(data as any).toString()
     })
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
 
     submitted.value = true
   } catch (error) {

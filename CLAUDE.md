@@ -17,7 +17,13 @@ npm run type-check   # Run TypeScript type checking without building
 ```
 
 ### Testing
-No testing framework is currently configured. The spec (`REBUILD_SPEC.md`) outlines plans for Vitest + Testing Library.
+```bash
+npm run test          # Run tests with Vitest
+npm run test:ui       # Run tests with Vitest UI
+npm run test:coverage # Run tests with coverage reporting
+```
+
+The project uses Vitest with @vue/test-utils and happy-dom for component testing. Test setup is in `src/tests/setup.ts` with mocks for Web APIs (AudioContext, navigator.vibrate, Wake Lock, IndexedDB).
 
 ## Architecture
 
@@ -61,8 +67,13 @@ src/
 │   ├── useHaptics.ts             # Vibration API
 │   ├── useKeyboardShortcuts.ts   # Global keyboard shortcuts
 │   └── useTheme.ts               # Dark mode system preference detection
+├── tests/
+│   ├── setup.ts                  # Vitest setup with Web API mocks
+│   └── composables/
+│       └── useMovementPattern.test.ts  # Movement pattern unit tests
 ├── types/
 │   └── index.ts                  # TypeScript interfaces
+├── style.css                     # Tailwind layers and custom utilities (.touch-target, .sr-only)
 ├── App.vue                       # Root component with navigation logic
 └── main.ts                       # App entry point
 ```
@@ -141,9 +152,10 @@ Settings are loaded on mount from `localStorage.getItem('emdr-settings')`.
 - Session IDs use `crypto.randomUUID()` (assumes modern browser support)
 
 ### Styling Conventions
-- Use Tailwind utility classes (no custom CSS files)
+- Use Tailwind utility classes with minimal custom CSS (`src/style.css` defines Tailwind layers)
 - Dark mode variants: `dark:bg-gray-800`, `dark:text-white`, etc.
-- Accessibility: `touch-target` class for 44x44px minimum touch areas
+- Accessibility: `touch-target` class for 44x44px minimum touch areas (defined in `src/style.css`)
+- Screen reader utility: `.sr-only` class for visually hidden but accessible content
 - Responsive: `min-h-screen`, `max-w-md`, `p-4`, `space-y-8` patterns
 
 ### Browser API Usage
@@ -156,7 +168,7 @@ Settings are loaded on mount from `localStorage.getItem('emdr-settings')`.
 - All interactive elements need `aria-label` attributes
 - Respect `prefers-reduced-motion` media query (implemented in `useTheme.ts`)
 - Keyboard navigation supported via `useKeyboardShortcuts.ts`
-- Target WCAG 2.1 AA compliance (see `REBUILD_SPEC.md` for full requirements)
+- Target WCAG 2.1 AA compliance
 
 ## Common Development Tasks
 
@@ -185,15 +197,15 @@ indexedDB.deleteDatabase('emdr-bls')
 location.reload()
 ```
 
-## Future Roadmap
+## Development Roadmap
 
-See `REBUILD_SPEC.md` for complete specification. Key phases:
+Implementation has been completed in phases:
 
 - **Phase 1 (DONE)**: Core BLS with basic patterns, audio, timer, settings persistence
 - **Phase 2 (DONE)**: Multiple patterns, haptics, keyboard shortcuts, toast notifications
 - **Phase 3 (DONE)**: Journaling system, IndexedDB, session history, export
-- **Phase 4 (PLANNED)**: PWA with service worker, offline support, install prompt, accessibility audit
-- **Phase 5 (OPTIONAL)**: Distress trend charts, custom audio upload, breathing exercises
+- **Phase 4 (DONE)**: PWA with service worker (Workbox), offline support, manifest, runtime caching
+- **Phase 5 (FUTURE)**: Distress trend charts, custom audio upload, breathing exercises, accessibility audit
 
 ## Important Constraints
 
@@ -220,7 +232,7 @@ See `REBUILD_SPEC.md` for complete specification. Key phases:
 ## Git Workflow Notes
 
 - Main branch: `main`
-- Current branch: `rebuild-from-scratch`
+- Development branches follow the pattern: `claude/*`
 - Commit message format includes co-authorship footer:
   ```
   🤖 Generated with [Claude Code](https://claude.com/claude-code)
